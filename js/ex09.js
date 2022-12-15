@@ -41,18 +41,23 @@ function drawMap(countries, svgEl){
     // bind and draw geographical features to <path> elements
     let path4proj = d3.geoPath()
                  .projection(PROJECTIONS.ER);
-    let countryG = ctx.mapG.append("g").attr("id", "countries");
+    let countryG = ctx.mapG.append("g").attr("id", "zones");
+    let hover = ctx.mapG.append("g").attr("id", "hover");
     countryG.selectAll("path.country")
             .data(countries.features)
             .enter()
             .append("path")
             .attr("d", path4proj)
-            .attr("class", "tiekar")
+            .attr("class", "zone")
             .style("fill", "grey")
             .style("stroke", "none")
             .style("stroke-width", "1")
-            .on("mouseover", function(d) {d3.select(this).style("fill", "red").style("stroke", "blue");})
-            .on("mouseout", function(d) { d3.select(this).style("fill", "grey").style("stroke", "none");})
+            .on("mouseover", function(d) {
+                temp = d3.select(this);
+                d3.select(this).style("fill", "red").style("stroke", "blue");
+                d3.select("#hover").node().appendChild(d3.select(this).node());
+            })
+            .on("mouseout", function(d) {d3.select(this).style("fill", "grey").style("stroke", "none");})
             // .on("click", function(d) { d3.select(this).style("fill", "grey").style("stroke", "black");});  
     ctx.mapG.append("g")
             .attr("id", "planes");
