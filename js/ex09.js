@@ -28,14 +28,14 @@ const LOCAL_DUMP_TIME_INDICES = [...Array(5).keys()].map(i => i + 49);
 let LOCAL_DUMP_TIME_INC = 1;
 
 const PROJECTIONS = {
-    ER: d3.geoEquirectangular().center([0,0]).scale(128)
+    ER: d3.geoEquirectangular().center([2.3488000,48.8534100]).scale(160000)
           .translate([ctx.w/2,ctx.h/2]),
 };
 
 const path4proj = d3.geoPath()
                   .projection(PROJECTIONS.ER);
 
-function drawMap(countries, lakes, rivers, svgEl){
+function drawMap(countries, svgEl){
     ctx.mapG = svgEl.append("g")
                     .attr("id", "map");
     // bind and draw geographical features to <path> elements
@@ -47,21 +47,13 @@ function drawMap(countries, lakes, rivers, svgEl){
             .enter()
             .append("path")
             .attr("d", path4proj)
-            .attr("class", "country");
-    let lakeG = ctx.mapG.append("g").attr("id", "lakes");
-    lakeG.selectAll("path.lakes")
-         .data(lakes.features)
-         .enter()
-         .append("path")
-         .attr("d", path4proj)
-         .attr("class", "lake");
-    let riverG = ctx.mapG.append("g").attr("id", "rivers");
-    riverG.selectAll("path.rivers")
-         .data(rivers.features)
-         .enter()
-         .append("path")
-         .attr("d", path4proj)
-         .attr("class", "river");
+            .attr("class", "tiekar")
+            .style("fill", "grey")
+            .style("stroke", "none")
+            .style("stroke-width", "1")
+            .on("mouseover", function(d) {d3.select(this).style("fill", "red").style("stroke", "blue");})
+            .on("mouseout", function(d) { d3.select(this).style("fill", "grey").style("stroke", "none");})
+            // .on("click", function(d) { d3.select(this).style("fill", "grey").style("stroke", "black");});  
     ctx.mapG.append("g")
             .attr("id", "planes");
     ctx.mapG.append("g")
@@ -119,12 +111,10 @@ function createViz(){
 
 /* data fetching and transforming */
 function loadGeo(svgEl){
-    let promises = [d3.json("ne_50m_admin_0_countries.geojson"),
-                    d3.json("ne_50m_lakes.geojson"),
-                    d3.json("ne_50m_rivers_lake_centerlines.geojson")];
+    let promises = [d3.json("paris_iris.json")];
     Promise.all(promises).then(function(data){
-        drawMap(data[0], data[1], data[2], svgEl);
-        loadFlights();
+        drawMap(data[0], svgEl);
+        // loadFlights();
     }).catch(function(error){console.log(error)});
 };
 
