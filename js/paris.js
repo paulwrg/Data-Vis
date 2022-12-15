@@ -45,7 +45,7 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
     let backgroundMap = ctx.mapG.append("g").attr("id", "backgroundMap");
     let zones = backgroundMap.append("g").attr("id", "zones");
 
-    let landmarks = ctx.mapG.append("g").attr("id", "landmarks");
+    let landmarks = ctx.mapG.append("g").attr("id", "landmarks").attr("pointer-events", "none");
     let water = landmarks.append("g").attr("id", "waterSpaces");
     let green = landmarks.append("g").attr("id", "greenSpaces");
     let roads = landmarks.append("g").attr("id", "roadSpaces");
@@ -65,22 +65,26 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
             .style("stroke-width", "0.5")
             .on("mouseover", function(d) {
                 thisNode = d3.select(this);
-                hover.selectAll("path").remove();
-                hover.node().appendChild(thisNode.node().cloneNode());
-                hover.selectAll("path").style("stroke", "blue").style("fill", "blue").style("opacity", 0.3).style("stroke-width", "0")
-                .on("click", function(d) {
-                    thisNode = d3.select(this);
-                    selected.selectAll("path").remove();
-                    selected.node().appendChild(thisNode.node().cloneNode());
-                    selected.selectAll("path").style("stroke", "red").style("fill", "none").style("stroke-width", "1").style("opacity", 1);  
-                });
+                hover.selectAll("path")
+                    .remove();
+                hover.node()
+                    .appendChild(thisNode.node().cloneNode());
+                hover.selectAll("path")
+                    .style("stroke", "blue")
+                    .style("fill", "blue")
+                    .style("opacity", 0.6)
+                    .style("stroke-width", "0")
+                    .attr("pointer-events", "none");
             })
-            // .on("mouseout", function(d) {d3.select(this).style("fill", "grey").style("stroke", "none");})
             .on("click", function(d) {
                 thisNode = d3.select(this);
                 selected.selectAll("path").remove();
                 selected.node().appendChild(thisNode.node().cloneNode());
-                selected.selectAll("path").style("stroke", "red").style("fill", "none").style("stroke-width", "1.5");  
+                selected.selectAll("path")
+                    .style("stroke", "red")
+                    .style("fill", "none")
+                    .style("stroke-width", "1.5")
+                    .attr("pointer-events", "none");  
             });
 
 
