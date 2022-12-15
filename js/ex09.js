@@ -42,7 +42,9 @@ function drawMap(countries, svgEl){
     let path4proj = d3.geoPath()
                  .projection(PROJECTIONS.ER);
     let countryG = ctx.mapG.append("g").attr("id", "zones");
-    let hover = ctx.mapG.append("g").attr("id", "hover");
+    let overlay = ctx.mapG.append("g").attr("id", "overlay");
+    let selected = overlay.append("g").attr("id", "selected");
+    let hover = overlay.append("g").attr("id", "hover");
     countryG.selectAll("path.country")
             .data(countries.features)
             .enter()
@@ -51,14 +53,21 @@ function drawMap(countries, svgEl){
             .attr("class", "zone")
             .style("fill", "grey")
             .style("stroke", "none")
-            .style("stroke-width", "1")
+            .style("stroke-width", "0.5")
             .on("mouseover", function(d) {
-                temp = d3.select(this);
-                d3.select(this).style("fill", "red").style("stroke", "blue");
-                d3.select("#hover").node().appendChild(d3.select(this).node());
+                thisNode = d3.select(this);
+                hover.selectAll("path").remove();
+                hover.node().appendChild(thisNode.node().cloneNode());
+                hover.selectAll("path").style("stroke", "blue").style("fill", "none").style("stroke-width", "0.2");
             })
             .on("mouseout", function(d) {d3.select(this).style("fill", "grey").style("stroke", "none");})
-            // .on("click", function(d) { d3.select(this).style("fill", "grey").style("stroke", "black");});  
+            .on("click", function(d) {
+                thisNode = d3.select(this);
+                selected.selectAll("path").remove();
+                selected.node().appendChild(thisNode.node().cloneNode());
+                selected.selectAll("path").style("stroke", "black").style("fill", "none").style("stroke-width", "0.5");
+                
+            });
     ctx.mapG.append("g")
             .attr("id", "planes");
     ctx.mapG.append("g")
