@@ -84,6 +84,7 @@ function getBoundingBoxCenter(selection) {
 }
 
 function drawMap(zonesData, waterData, greenData, roadData, svgEl){
+    console.log(zonesData)
     ctx.mapG = svgEl.append("g")
                     .attr("id", "map");
 
@@ -179,6 +180,22 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                 else {
                     selected.select("path:last-child").remove();
                     ctx.target = d.properties.MOVEMENT_ID;
+                    
+                    box = getBoundingBoxCenter(thisNode);
+
+                    const myHeaders = new Headers();
+                    myHeaders.append('Content-Type', 'application/json');
+                    myHeaders.append('Authorization', '3b036afe-0110-4202-b9ed-99718476c2e0');
+                    fetch(`https://api.navitia.io/v1/coverage/sandbox/journeys?from=${ctx.src[0]}%3B${ctx.src[1]}&to=${box[0]}%3B${box[1]}&`,
+                    {
+                        method: 'GET',
+                        headers: myHeaders,
+                    }).then(function(response) {return response.json();})
+                    .then(function(data) {public(data);});
+                    if (ctx.src) {
+                        console.log(haversineDistance(getBoundingBoxCenter(selected.select("path:last-child")), ctx.src));
+                        console.log(convertTime(3600 * haversineDistance(getBoundingBoxCenter(selected.select("path:last-child")), ctx.src) / 4));
+                    }
                 }
                 selected.node().appendChild(thisNode.node().cloneNode());
                 selected.selectAll("path")
@@ -186,11 +203,8 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                     .style("fill", "none")
                     .style("stroke-width", 5*ctx.scale)
                     .attr("pointer-events", "none");
-                if (ctx.src) {
-                    console.log(haversineDistance(getBoundingBoxCenter(selected.select("path:last-child")), ctx.src));
-                    console.log(convertTime(3600 * haversineDistance(getBoundingBoxCenter(selected.select("path:last-child")), ctx.src) / 4));
-                }
             });
+
 
     water.selectAll("path.water")
         .data(waterData.features)
@@ -269,6 +283,15 @@ function createViz(){
 
 };
 
+function public(json) {
+    console.log(json);
+    if (json.journeys)
+    {
+        for (i=0; i<json.journeys.length;i++){
+            console.log(json.journeys[i].duration)
+        }
+    }
+}
 
 // function toggleUpdate(){
 //     // feel free to rewrite the 'if' test
@@ -297,7 +320,6 @@ function loadGeo(svgEl){
         drawMap(data[0], data[1], data[2], data[3], svgEl);
         ctx.distancesWE = data[4].filter( d => d.month==1);
         ctx.distancesWD = data[5].filter( d => d.month==1);
-        // loadFlights();
         svgEl.select("rect")
             .style("fill", "white");
     }).catch(function(error){console.log(error)});
