@@ -9,6 +9,9 @@ const ctx = {
     WEWD: "WE",
 };
 
+const tree = {
+};
+
 const PROJECTIONS = {
     ER: d3.geoConicConformal()
         .parallels([44,49])
@@ -47,7 +50,7 @@ function haversineDistance(coords1, coords2) {
 }
 
 /** Returns the mean travel time of an Uber ride from selected source to input zone. */
-function distance(d){
+function distanceUber(d){
     if (d.properties.MOVEMENT_ID == ctx.selected) return -1;
     switch (ctx.WEWD){
         case "WE":
@@ -73,7 +76,7 @@ function convertTime(totalInSeconds) {
     remainder = totalInSeconds - 3600 * hours;
     minutes = Math.floor(remainder/60);
     seconds = remainder - 60 * minutes;
-    return [hours, minutes, seconds];
+    return `${hours} hours ${minutes} and ${seconds}`;
 }
 
 /** Returns the geo coordinates of the center of the bounding box of any element selected using d3.select(...). */
@@ -84,7 +87,6 @@ function getBoundingBoxCenter(selection) {
 }
 
 function drawMap(zonesData, waterData, greenData, roadData, svgEl){
-    console.log(zonesData)
     ctx.mapG = svgEl.append("g")
                     .attr("id", "map");
 
@@ -94,19 +96,19 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
 
                 
     //DOM Tree
-    let backgroundMap = ctx.mapG.append("g").attr("id", "backgroundMap");
-    let zones = backgroundMap.append("g").attr("id", "zones");
+    tree.backgroundMap = ctx.mapG.append("g").attr("id", "backgroundMap");
+    tree.zones = tree.backgroundMap.append("g").attr("id", "zones");
 
-    let landmarks = ctx.mapG.append("g").attr("id", "landmarks").attr("pointer-events", "none");
-    let water = landmarks.append("g").attr("id", "waterSpaces");
-    let green = landmarks.append("g").attr("id", "greenSpaces");
-    let roads = landmarks.append("g").attr("id", "roadSpaces");
+    tree.landmarks = ctx.mapG.append("g").attr("id", "landmarks").attr("pointer-events", "none");
+    tree.water = tree.landmarks.append("g").attr("id", "waterSpaces");
+    tree.green = tree.landmarks.append("g").attr("id", "greenSpaces");
+    tree.roads = tree.landmarks.append("g").attr("id", "roadSpaces");
 
-    let overlay = ctx.mapG.append("g").attr("id", "overlay");
-    let hover = overlay.append("g").attr("id", "hover");
-    let selected = overlay.append("g").attr("id", "selected");
+    tree.overlay = ctx.mapG.append("g").attr("id", "overlay");
+    tree.hover = tree.overlay.append("g").attr("id", "hover");
+    tree.selected = tree.overlay.append("g").attr("id", "selected");
 
-    zones.selectAll("path.zone")
+    tree.zones.selectAll("path.zone")
             .data(zonesData.features)
             .enter()
             .append("path")
@@ -117,96 +119,45 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
             .style("stroke-width", "0.5")
             .on("mouseover", function(event,d) {
                 thisNode = d3.select(this);
-                hover.selectAll("path")
+                tree.hover.selectAll("path")
                     .remove();
-                hover.node()
+                tree.hover.node()
                     .appendChild(thisNode.node().cloneNode());
-                hover.selectAll("path")
+                tree.hover.selectAll("path")
                     .style("stroke", "blue")
                     .style("fill", "blue")
                     .style("opacity", 0.6)
                     .style("stroke-width", "0")
                     .attr("pointer-events", "none");
-
                 if (ctx.selected) {
-                    d3.select("#info").text(distance(d))
+                    d3.select("#info").text(distanceUber(d))
                 };
             })
-            .on("dblclick",function(event, d){
-                thisNode = d3.select(this);
-                selected.selectAll("path").remove();
-                selected.node().appendChild(thisNode.node().cloneNode());
-                ctx.selected = d.properties.MOVEMENT_ID;
-                ctx.filteredWE = ctx.distancesWE.filter(d => d.sourceid == ctx.selected);
-                ctx.filteredWD = ctx.distancesWD.filter(d => d.sourceid == ctx.selected);
-                zones.selectAll("path.zone")
-                .style("fill", function(d) {
-                    dist = distance(d);
-                    return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
-                });
-                selected.node().appendChild(thisNode.node().cloneNode());
-                selected.selectAll("path")
-                    .attr("id", "selected_path")
-                    .style("stroke", "red")
-                    .style("fill", "none")
-                    .style("stroke-width", 5*ctx.scale)
-                    .attr("pointer-events", "none");
-
-                ctx.src = getBoundingBoxCenter(d3.select("#selected_path"));
-            })
+            .on("dblclick",function(event, d){newOrigin(d3.select(this), d);})
             .on("click", function(event, d) {
                 thisNode = d3.select(this);
                 if (ctx.first) {
-                    selected.node().appendChild(thisNode.node().cloneNode());
-                    ctx.first = false;
-                    
-                    ctx.selected = d.properties.MOVEMENT_ID;
-                    ctx.filteredWE = ctx.distancesWE.filter(d => d.sourceid == ctx.selected);
-                    ctx.filteredWD = ctx.distancesWD.filter(d => d.sourceid == ctx.selected);
-
-                    // Color the zones in the map according to the time it takes to get there from selected point
-                    zones.selectAll("path.zone")
-                    .style("fill", function(d) {
-                        dist = distance(d);
-                        return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
-                    });
-
+                    ctx.first = false;             
                     // Make green areas disappear as they would pollute the visual
-                    green.selectAll("path.green")
+                    tree.green.selectAll("path.green")
                         .style("opacity", 0);
-                    
-                    ctx.src = getBoundingBoxCenter(selected.select("path:last-child"));
+                    newOrigin(d3.select(this), d);
+
                 }
                 else {
-                    selected.select("path:last-child").remove();
-                    ctx.target = d.properties.MOVEMENT_ID;
-                    
-                    box = getBoundingBoxCenter(thisNode);
-
-                    const myHeaders = new Headers();
-                    myHeaders.append('Content-Type', 'application/json');
-                    myHeaders.append('Authorization', '3b036afe-0110-4202-b9ed-99718476c2e0');
-                    fetch(`https://api.navitia.io/v1/coverage/sandbox/journeys?from=${ctx.src[0]}%3B${ctx.src[1]}&to=${box[0]}%3B${box[1]}&`,
-                    {
-                        method: 'GET',
-                        headers: myHeaders,
-                    }).then(function(response) {return response.json();})
-                    .then(function(data) {public(data);});
-                    if (ctx.src) {
-                        console.log(haversineDistance(getBoundingBoxCenter(selected.select("path:last-child")), ctx.src));
-                        console.log(convertTime(3600 * haversineDistance(getBoundingBoxCenter(selected.select("path:last-child")), ctx.src) / 4));
-                    }
+                    newTarget(thisNode, d);
                 }
-                selected.node().appendChild(thisNode.node().cloneNode());
-                selected.selectAll("path")
+                tree.selected.selectAll("path.zone")
                     .style("stroke", "red")
                     .style("fill", "none")
                     .style("stroke-width", 5*ctx.scale)
                     .attr("pointer-events", "none");
+
+
             });
 
 
-    water.selectAll("path.water")
+    tree.water.selectAll("path.water")
         .data(waterData.features)
         .enter()
         .append("path")
@@ -214,7 +165,7 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
         .attr("class", "water")
         .style("fill", "lightblue");
 
-    green.selectAll("path.green")
+    tree.green.selectAll("path.green")
         .data(greenData.features)
         .enter()
         .append("path")
@@ -222,7 +173,7 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
         .attr("class", "green")
         .style("fill", "#daffb3");
 
-    roads.selectAll("path.road")
+    tree.roads.selectAll("path.road")
         .data(roadData.features)
         .enter()
         .append("path")
@@ -237,7 +188,7 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
       scale = scale.substring(scale.indexOf('scale(')+6);
       scale = parseFloat(scale.substring(0, scale.indexOf(')')));
       ctx.scale = 1 / scale;
-      selected.selectAll("path").style("stroke-width", 5*ctx.scale);
+      tree.selected.selectAll("path").style("stroke-width", 5*ctx.scale);
       if (ctx.scale != 1){
           d3.selectAll("image")
             .attr("transform", (d) => (getPlaneTransform(d)));
@@ -252,6 +203,54 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
     svgEl.on("dblclick.zoom", null);
 };
 
+function newOrigin(thisNode, d) {
+    tree.selected.selectAll("path").remove();
+    tree.selected.node().appendChild(thisNode.node().cloneNode());
+    ctx.selected = d.properties.MOVEMENT_ID;
+    ctx.filteredWE = ctx.distancesWE.filter(d => d.sourceid == ctx.selected);
+    ctx.filteredWD = ctx.distancesWD.filter(d => d.sourceid == ctx.selected);
+    tree.zones.selectAll("path.zone")
+
+    // Color the zones in the map according to the time it takes to get there from selected point
+    .style("fill", function(d) {
+        dist = distanceUber(d);
+        return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
+    });
+
+    tree.selected.node().appendChild(thisNode.node().cloneNode());
+    tree.selected.selectAll("path")
+        .attr("id", "selected_path")
+        .style("stroke", "red")
+        .style("fill", "none")
+        .style("stroke-width", 5*ctx.scale)
+        .attr("pointer-events", "none");
+
+    ctx.src = getBoundingBoxCenter(d3.select("#selected_path"));
+}
+
+function newTarget(thisNode, d) {
+    tree.selected.select("path:last-child").remove();
+    tree.selected.node().appendChild(thisNode.node().cloneNode());
+
+    ctx.target = d.properties.MOVEMENT_ID;
+    
+    box = getBoundingBoxCenter(thisNode);
+
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
+    myHeaders.append('Authorization', '3b036afe-0110-4202-b9ed-99718476c2e0');
+    fetch(`https://api.navitia.io/v1/coverage/sandbox/journeys?from=${ctx.src[0]}%3B${ctx.src[1]}&to=${box[0]}%3B${box[1]}&`,
+    {
+        method: 'GET',
+        headers: myHeaders,
+    }).then(function(response) {return response.json();})
+    .then(function(data) {public(data);});
+    if (ctx.src) {
+        console.log(haversineDistance(getBoundingBoxCenter(tree.selected.select("path:last-child")), ctx.src));
+        console.log(convertTime(3600 * haversineDistance(getBoundingBoxCenter(tree.selected.select("path:last-child")), ctx.src) / 4));
+    }
+}
+
 function toggleWEWD() {
     if (d3.select("#WEWDbt").attr("value") == "WE"){
         d3.select("#WEWDbt").attr("value", "WD");
@@ -263,10 +262,21 @@ function toggleWEWD() {
     }
     d3.select("#zones").selectAll("path.zone")
             .style("fill", function(d) {
-                dist = distance(d);
+                dist = distanceUber(d);
                 return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
             });
 }
+
+function public(json) {
+    console.log(json);
+    if (json.journeys)
+    {
+        for (i=0; i<json.journeys.length;i++){
+            console.log(json.journeys[i].duration)
+        }
+    }
+}
+
 function createViz(){
     // d3.select("body")
     //   .on("keydown", (event,d) => (handleKeyEvent(event)));
@@ -283,29 +293,6 @@ function createViz(){
 
 };
 
-function public(json) {
-    console.log(json);
-    if (json.journeys)
-    {
-        for (i=0; i<json.journeys.length;i++){
-            console.log(json.journeys[i].duration)
-        }
-    }
-}
-
-// function toggleUpdate(){
-//     // feel free to rewrite the 'if' test
-//     // this is just dummy code to make the interface
-//     // behave properly
-//     if (d3.select("#updateBt").attr("value") == "On"){
-//         d3.select("#updateBt").attr("value", "Off");
-//         clearInterval(ctx.planeUpdater);
-//     }
-//     else {
-//         d3.select("#updateBt").attr("value", "On");
-//         startPlaneUpdater();
-//     }
-// };
 
 /** data fetching and transforming */
 function loadGeo(svgEl){
