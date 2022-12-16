@@ -7,13 +7,14 @@ let ctx = {
     scale: 1,
     first: true,
     WEWD: "WE",
+    MEDIUM: "TAXI"
 }
-
 /**
  * times between src and target
  */
 let results = {
 }
+
 
 /**
  * backgroundMap; 
@@ -151,13 +152,12 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                 };
             })
             .on("mouseout", function(event,d) {
-                thisNode = d3.select(this);
                 tree.hover.selectAll("path")
                     .remove();
             })
             .on("dblclick",function(event, d){
                 thisNode = d3.select(this);
-                newOrigin(d3.select(this), d);
+                newOrigin(thisNode, d);
             })
             .on("click", function(event, d) {
                 thisNode = d3.select(this);
@@ -166,7 +166,7 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                     // Make green areas disappear as they would pollute the visual
                     tree.green.selectAll("path.green")
                         .style("opacity", 0);
-                    newOrigin(d3.select(this), d);
+                    newOrigin(thisNode, d);
 
                 }
                 else {
@@ -338,6 +338,26 @@ function createViz(){
 
 }
 
+function toggleTaxi() {
+    ctx.MEDIUM = "TAXI";
+    d3.select("#medium-selection li text")
+        .text("Uber ride: mean duration")
+    return;
+}
+
+function toggleMetro() {
+    ctx.MEDIUM = "METRO";
+    d3.select("#medium-selection li text")
+        .text("Public transport: mean duration")
+    return;
+}
+
+function toggleWalk() {
+    ctx.MEDIUM = "WALK";
+    d3.select("#medium-selection li text")
+        .text("Walking: mean duration")
+    return;
+}
 
 /** data fetching and transforming */
 function loadGeo(svgEl){

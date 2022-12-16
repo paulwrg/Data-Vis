@@ -146,6 +146,10 @@
         .sub-menu li:hover {
             background: black;
         }
+        .sub-menu li:active {
+            background: white;
+            transition: 0ms;
+        }
         .menu > li:hover .sub-menu li {
             transform: scale(1);
         }
@@ -166,11 +170,13 @@
                 </div>
                 <ul id="medium-selection" class="menu">
                     <li>
-                        Map displayed
+                        <text>
+                            Map displayed
+                        </text>
                         <ul class="sub-menu">
-                            <li>Taxi</li>
-                            <li>Public transportation</li>
-                            <li>Walking</li>
+                            <li onclick="toggleTaxi();">Taxi</li>
+                            <li onclick="toggleMetro();">Public transportation</li>
+                            <li onclick="toggleWalk();">Walking</li>
                         </ul>
                     </li>
                 </ul>
