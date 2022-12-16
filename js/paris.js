@@ -19,6 +19,34 @@ const PROJECTIONS = {
 
 const path4proj = d3.geoPath().projection(PROJECTIONS.ER);
 
+/** Returns the distance in kilometers between two points using spherical-Earth approximation. */
+function haversineDistance(coords1, coords2) {
+    function toRad(x) {
+      return x * Math.PI / 180;
+    }
+  
+    var lon1 = coords1[0];
+    var lat1 = coords1[1];
+  
+    var lon2 = coords2[0];
+    var lat2 = coords2[1];
+  
+    var R = 6371; // km
+  
+    var x1 = lat2 - lat1;
+    var dLat = toRad(x1);
+    var x2 = lon2 - lon1;
+    var dLon = toRad(x2)
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    var d = R * c;
+  
+    return d;
+}
+
+/** Returns the mean travel time of an Uber ride from selected source to input zone. */
 function distance(d){
     if (d.properties.MOVEMENT_ID == ctx.selected) return -1;
     switch (ctx.WEWD){
@@ -39,6 +67,16 @@ function distance(d){
     }
 }
 
+// Converts time from seconds to hours-minutes-seconds format
+function convertTime(totalInSeconds) {
+    hours = Math.floor(totalInSeconds/3600);
+    remainder = totalInSeconds - 3600 * hours;
+    minutes = Math.floor(remainder/60);
+    seconds = remainder - 60 * minutes;
+    return [hours, minutes, seconds];
+}
+
+/** Returns the geo coordinates of the center of the bounding box of any element selected using d3.select(...). */
 function getBoundingBoxCenter(selection) {
     var element = selection.node();
     var bbox = element.getBBox();
@@ -113,7 +151,7 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                     .style("stroke-width", 5*ctx.scale)
                     .attr("pointer-events", "none");
 
-                console.log(getBoundingBoxCenter(d3.select("#selected_path")));
+                ctx.src = getBoundingBoxCenter(d3.select("#selected_path"));
             })
             .on("click", function(event, d) {
                 thisNode = d3.select(this);
@@ -125,13 +163,18 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                     ctx.filteredWE = ctx.distancesWE.filter(d => d.sourceid == ctx.selected);
                     ctx.filteredWD = ctx.distancesWD.filter(d => d.sourceid == ctx.selected);
 
+                    // Color the zones in the map according to the time it takes to get there from selected point
                     zones.selectAll("path.zone")
                     .style("fill", function(d) {
                         dist = distance(d);
                         return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
                     });
+
+                    // Make green areas disappear as they would pollute the visual
                     green.selectAll("path.green")
                         .style("opacity", 0);
+                    
+                    ctx.src = getBoundingBoxCenter(selected.select("path:last-child"));
                 }
                 else {
                     selected.select("path:last-child").remove();
@@ -143,6 +186,10 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                     .style("fill", "none")
                     .style("stroke-width", 5*ctx.scale)
                     .attr("pointer-events", "none");
+                if (ctx.src) {
+                    console.log(haversineDistance(getBoundingBoxCenter(selected.select("path:last-child")), ctx.src));
+                    console.log(convertTime(3600 * haversineDistance(getBoundingBoxCenter(selected.select("path:last-child")), ctx.src) / 4));
+                }
             });
 
     water.selectAll("path.water")
