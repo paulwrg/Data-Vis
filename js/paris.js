@@ -84,7 +84,6 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
             .attr("d", path4proj)
             .attr("class", "zone")
             .style("fill", "black")
-            // .style("fill", (d) => (d3.interpolateRdYlGn(1 - Math.exp(-distanceNaive(d) ))))
             .style("stroke", "none")
             .style("stroke-width", "0.5")
             .on("mouseover", function(event,d) {
@@ -179,8 +178,8 @@ function createViz(){
     d3.select("body")
       .on("keydown", (event,d) => (handleKeyEvent(event)));
     let svgEl = d3.select("#main").append("svg");
-    svgEl.attr("width", ctx.w);
-    svgEl.attr("height", ctx.h);
+    svgEl.attr("width", "100%");
+    svgEl.attr("height", "100vh");
     svgEl.append("rect")
          .attr("x", 0)
          .attr("y", 0)
