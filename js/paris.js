@@ -13,7 +13,6 @@ const ctx = {
     LO_MIN: -4.93,
     LO_MAX: 7.72,
     curPath: [],
-    selected: 359,
 };
 
 // const SRC = ctx.SRC_OS;
@@ -100,7 +99,9 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                     .style("stroke-width", "0")
                     .attr("pointer-events", "none");
 
-                d3.select("#info").text(distance(d));
+                if (ctx.selected) {
+                    d3.select("#info").text(distance(d))
+                };
             })
             .on("click", function(event, d) {
                 thisNode = d3.select(this);
