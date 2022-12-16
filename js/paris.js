@@ -135,13 +135,12 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                 };
             })
             .on("mouseout", function(event,d) {
-                thisNode = d3.select(this);
                 tree.hover.selectAll("path")
                     .remove();
             })
             .on("dblclick",function(event, d){
                 thisNode = d3.select(this);
-                newOrigin(d3.select(this), d);
+                newOrigin(thisNode, d);
             })
             .on("click", function(event, d) {
                 thisNode = d3.select(this);
@@ -150,7 +149,7 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                     // Make green areas disappear as they would pollute the visual
                     tree.green.selectAll("path.green")
                         .style("opacity", 0);
-                    newOrigin(d3.select(this), d);
+                    newOrigin(thisNode, d);
 
                 }
                 else {
