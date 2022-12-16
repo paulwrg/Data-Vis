@@ -12,7 +12,8 @@ const ctx = {
     LA_MAX: 51.16,
     LO_MIN: -4.93,
     LO_MAX: 7.72,
-    curPath: []
+    curPath: [],
+    selected: 359,
 };
 
 // const SRC = ctx.SRC_OS;
@@ -34,6 +35,28 @@ const PROJECTIONS = {
 
 const path4proj = d3.geoPath()
                   .projection(PROJECTIONS.ER);
+
+function distanceNaive(d){
+    for (let i = 0; i < ctx.test.length; i++) {
+        // console.log("ola");
+        if (ctx.test[i].month==1 && ctx.test[i].sourceid == ctx.selected && ctx.test[i].dstid == d.properties.MOVEMENT_ID) {
+            console.log(ctx.test[i].mean_travel_time)
+            return ctx.test[i].mean_travel_time;
+        }
+      }
+    return 0;
+}
+
+function distance(d){
+    if (d.properties.MOVEMENT_ID == ctx.selected) return -1;
+    for (let i = 0; i < ctx.filtered.length; i++) {
+        // console.log("ola");
+        if (ctx.filtered[i].dstid == d.properties.MOVEMENT_ID) {
+            console.log(ctx.filtered[i].mean_travel_time)
+            return ctx.filtered[i].mean_travel_time;
+        }
+      }
+}
 
 function drawMap(zonesData, waterData, greenData, roadData, svgEl){
     ctx.mapG = svgEl.append("g")
@@ -61,9 +84,11 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
             .attr("d", path4proj)
             .attr("class", "zone")
             .style("fill", "black")
+            // .style("fill", (d) => (d3.interpolateRdYlGn(1 - Math.exp(-distanceNaive(d) ))))
             .style("stroke", "none")
             .style("stroke-width", "0.5")
-            .on("mouseover", function(d) {
+            .on("mouseover", function(event,d) {
+                console.log(d.properties.MOVEMENT_ID);
                 thisNode = d3.select(this);
                 hover.selectAll("path")
                     .remove();
@@ -75,16 +100,29 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                     .style("opacity", 0.6)
                     .style("stroke-width", "0")
                     .attr("pointer-events", "none");
+
+                d3.select("#info").text(distance(d));
             })
-            .on("click", function(d) {
+            .on("click", function(event, d) {
                 thisNode = d3.select(this);
                 selected.selectAll("path").remove();
                 selected.node().appendChild(thisNode.node().cloneNode());
                 selected.selectAll("path")
                     .style("stroke", "red")
                     .style("fill", "none")
-                    .style("stroke-width", "1.5")
-                    .attr("pointer-events", "none");  
+                    .style("stroke-width", 1.5*ctx.scale)
+                    .attr("pointer-events", "none");
+                console.log(selected.selectAll("path"));
+
+                ctx.selected = d.properties.MOVEMENT_ID;
+                ctx.filtered = ctx.distances.filter(d => d.sourceid == ctx.selected);
+
+                zones.selectAll("path.zone")
+                    .style("fill", function(d) {
+                        dist = distance(d);
+                        return dist ? d3.interpolateRdYlGn(Math.exp(-dist/500 )) : "black";});
+                green.selectAll("path.green")
+                    .style("opacity", 0.5);
             });
 
 
@@ -123,6 +161,7 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
       scale = scale.substring(scale.indexOf('scale(')+6);
       scale = parseFloat(scale.substring(0, scale.indexOf(')')));
       ctx.scale = 1 / scale;
+      selected.selectAll("path").style("stroke-width", 1.5*ctx.scale);
       if (ctx.scale != 1){
           d3.selectAll("image")
             .attr("transform", (d) => (getPlaneTransform(d)));
@@ -134,21 +173,6 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
         .scaleExtent([1, 40])
         .on("zoom", zoomed);
     svgEl.call(zoom);
-};
-
-function getPlaneTransform(d){
-    let xy = PROJECTIONS.ER([d.lon, d.lat]);
-    let sc = 4*ctx.scale;
-    let x = xy[0] - sc;
-    let y = xy[1] - sc;
-    if (d.bearing != null && d.bearing != 0){
-        let t = `translate(${x},${y}) rotate(${d.bearing} ${sc} ${sc})`;
-        return (ctx.scale == 1) ? t : t + ` scale(${ctx.scale})`;
-    }
-    else {
-        let t = `translate(${x},${y})`;
-        return (ctx.scale == 1) ? t : t + ` scale(${ctx.scale})`;
-    }
 };
 
 function createViz(){
@@ -164,9 +188,8 @@ function createViz(){
          .attr("height", "100%")
          .attr("fill", "#bcd1f1");
     loadGeo(svgEl);
+
 };
-
-
 
 function getWaypointColor(d) {
     // planes on the ground are green
@@ -176,7 +199,7 @@ function getWaypointColor(d) {
         return "green";
     }
     return d.alt ? d3.interpolateRdYlGn(1 - Math.min(d.alt/10000, 1)) : "purple";
-}
+};
 
 function drawFlights() {
     let planes = d3.select("g#planes")
@@ -321,9 +344,11 @@ function loadGeo(svgEl){
         d3.json("geojson/plan-de-voirie-voies-deau.geojson"),
         d3.json("geojson/espaces_verts.geojson"),
         d3.json("geojson/plan-de-voirie-chaussees.geojson"),
+        d3.csv("data/paris-iris-2020-1-OnlyWeekends-MonthlyAggregate.csv")
     ];
     Promise.all(promises).then(function(data){
         drawMap(data[0], data[1], data[2], data[3], svgEl);
+        ctx.distances = data[4].filter( d => d.month==1);
         // loadFlights();
     }).catch(function(error){console.log(error)});
 };
