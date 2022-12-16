@@ -4,6 +4,7 @@ const ctx = {
     TRANSITION_DURATION: 1000,
     scale: 1,
     first: true,
+    WEWD: "WE",
 };
 
 const PROJECTIONS = {
@@ -16,12 +17,22 @@ const path4proj = d3.geoPath().projection(PROJECTIONS.ER);
 
 function distance(d){
     if (d.properties.MOVEMENT_ID == ctx.selected) return -1;
-    for (let i = 0; i < ctx.filtered.length; i++) {
-        if (ctx.filtered[i].dstid == d.properties.MOVEMENT_ID) {
-            // console.log(ctx.filtered[i].mean_travel_time)
-            return ctx.filtered[i].mean_travel_time;
-        }
-      }
+    switch (ctx.WEWD){
+        case "WE":
+            for (let i = 0; i < ctx.filteredWE.length; i++) {
+                if (ctx.filteredWE[i].dstid == d.properties.MOVEMENT_ID) {
+                    // console.log(ctx.filteredWE[i].mean_travel_time)
+                    return ctx.filteredWE[i].mean_travel_time;
+                }
+              }
+        case "WD":
+            for (let i = 0; i < ctx.filteredWD.length; i++) {
+                if (ctx.filteredWD[i].dstid == d.properties.MOVEMENT_ID) {
+                    // console.log(ctx.filteredWE[i].mean_travel_time)
+                    return ctx.filteredWD[i].mean_travel_time;
+                }
+              }
+    }
 }
 
 function drawMap(zonesData, waterData, greenData, roadData, svgEl){
@@ -56,7 +67,7 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
             .style("stroke", "none")
             .style("stroke-width", "0.5")
             .on("mouseover", function(event,d) {
-                console.log(d.properties.MOVEMENT_ID);
+                // console.log(d.properties.MOVEMENT_ID);
                 thisNode = d3.select(this);
                 hover.selectAll("path")
                     .remove();
@@ -78,7 +89,8 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                 selected.selectAll("path").remove();
                 selected.node().appendChild(thisNode.node().cloneNode());
                 ctx.selected = d.properties.MOVEMENT_ID;
-                ctx.filtered = ctx.distances.filter(d => d.sourceid == ctx.selected);
+                ctx.filteredWE = ctx.distancesWE.filter(d => d.sourceid == ctx.selected);
+                ctx.filteredWD = ctx.distancesWD.filter(d => d.sourceid == ctx.selected);
                 zones.selectAll("path.zone")
                 .style("fill", function(d) {
                     dist = distance(d);
@@ -98,7 +110,8 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                     ctx.first = false;
                     
                     ctx.selected = d.properties.MOVEMENT_ID;
-                    ctx.filtered = ctx.distances.filter(d => d.sourceid == ctx.selected);
+                    ctx.filteredWE = ctx.distancesWE.filter(d => d.sourceid == ctx.selected);
+                    ctx.filteredWD = ctx.distancesWD.filter(d => d.sourceid == ctx.selected);
 
                     zones.selectAll("path.zone")
                     .style("fill", function(d) {
@@ -167,6 +180,21 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
 ;
 };
 
+function toggleWEWD() {
+    if (d3.select("#WEWDbt").attr("value") == "WE"){
+        d3.select("#WEWDbt").attr("value", "WD");
+        ctx.WEWD = "WD";     
+    }
+    else {
+        d3.select("#WEWDbt").attr("value", "WE");
+        ctx.WEWD = "WE";
+    }
+    d3.select("#zones").selectAll("path.zone")
+            .style("fill", function(d) {
+                dist = distance(d);
+                return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
+            });
+}
 function createViz(){
     // d3.select("body")
     //   .on("keydown", (event,d) => (handleKeyEvent(event)));
@@ -204,11 +232,13 @@ function loadGeo(svgEl){
         d3.json("geojson/plan-de-voirie-voies-deau.geojson"),
         d3.json("geojson/espaces_verts.geojson"),
         d3.json("geojson/plan-de-voirie-chaussees.geojson"),
-        d3.csv("data/paris-iris-2020-1-OnlyWeekends-MonthlyAggregate.csv")
+        d3.csv("data/paris-iris-2020-1-OnlyWeekends-MonthlyAggregate.csv"),
+        d3.csv("data/paris-iris-2020-1-OnlyWeekdays-MonthlyAggregate.csv")
     ];
     Promise.all(promises).then(function(data){
         drawMap(data[0], data[1], data[2], data[3], svgEl);
-        ctx.distances = data[4].filter( d => d.month==1);
+        ctx.distancesWE = data[4].filter( d => d.month==1);
+        ctx.distancesWD = data[5].filter( d => d.month==1);
         // loadFlights();
         svgEl.select("rect")
             .style("fill", "white");
