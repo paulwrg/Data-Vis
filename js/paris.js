@@ -133,7 +133,15 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                     d3.select("#info").text(distanceUber(d))
                 };
             })
-            .on("dblclick",function(event, d){newOrigin(d3.select(this), d);})
+            .on("mouseout", function(event,d) {
+                thisNode = d3.select(this);
+                tree.hover.selectAll("path")
+                    .remove();
+            })
+            .on("dblclick",function(event, d){
+                thisNode = d3.select(this);
+                newOrigin(d3.select(this), d);
+            })
             .on("click", function(event, d) {
                 thisNode = d3.select(this);
                 if (ctx.first) {
