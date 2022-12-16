@@ -116,8 +116,6 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
             .style("stroke-width", "0.5")
             .on("mouseover", function(event,d) {
                 thisNode = d3.select(this);
-                hover.selectAll("path")
-                    .remove();
                 hover.node()
                     .appendChild(thisNode.node().cloneNode());
                 hover.selectAll("path")
@@ -130,6 +128,11 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                 if (ctx.selected) {
                     d3.select("#info").text(distance(d))
                 };
+            })
+            .on("mouseout", function(event,d) {
+                thisNode = d3.select(this);
+                hover.selectAll("path")
+                    .remove();
             })
             .on("dblclick",function(event, d){
                 thisNode = d3.select(this);
