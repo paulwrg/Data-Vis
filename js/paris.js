@@ -5,6 +5,7 @@ const ctx = {
     map_origin_lon: 48.8527,
     TRANSITION_DURATION: 1000,
     scale: 1,
+    first: true,
 };
 
 const PROJECTIONS = {
@@ -80,9 +81,17 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                     d3.select("#info").text(distance(d))
                 };
             })
-            .on("click", function(event, d) {
+            .on("dblclick",function(event, d){
                 thisNode = d3.select(this);
                 selected.selectAll("path").remove();
+                selected.node().appendChild(thisNode.node().cloneNode());
+                ctx.selected = d.properties.MOVEMENT_ID;
+                ctx.filtered = ctx.distances.filter(d => d.sourceid == ctx.selected);
+                zones.selectAll("path.zone")
+                .style("fill", function(d) {
+                    dist = distance(d);
+                    return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
+                });
                 selected.node().appendChild(thisNode.node().cloneNode());
                 selected.selectAll("path")
                     .attr("id", "selected_path")
@@ -92,16 +101,34 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                     .attr("pointer-events", "none");
 
                 console.log(getBoundingBoxCenter(d3.select("#selected_path")));
+            })
+            .on("click", function(event, d) {
+                thisNode = d3.select(this);
+                if (ctx.first) {
+                    selected.node().appendChild(thisNode.node().cloneNode());
+                    ctx.first = false;
+                    
+                    ctx.selected = d.properties.MOVEMENT_ID;
+                    ctx.filtered = ctx.distances.filter(d => d.sourceid == ctx.selected);
 
-                ctx.selected = d.properties.MOVEMENT_ID;
-                ctx.filtered = ctx.distances.filter(d => d.sourceid == ctx.selected);
-
-                zones.selectAll("path.zone")
+                    zones.selectAll("path.zone")
                     .style("fill", function(d) {
                         dist = distance(d);
-                        return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";});
-                green.selectAll("path.green")
-                    .style("opacity", 0);
+                        return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
+                    });
+                    green.selectAll("path.green")
+                        .style("opacity", 0);
+                }
+                else {
+                    selected.select("path:last-child").remove();
+                    ctx.target = d.properties.MOVEMENT_ID;
+                }
+                selected.node().appendChild(thisNode.node().cloneNode());
+                selected.selectAll("path")
+                    .style("stroke", "red")
+                    .style("fill", "none")
+                    .style("stroke-width", 5*ctx.scale)
+                    .attr("pointer-events", "none");
             });
 
     water.selectAll("path.water")
@@ -146,7 +173,8 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
     let zoom = d3.zoom()
         .scaleExtent([0.03, 3])
         .on("zoom", zoomed);
-    svgEl.call(zoom);
+    svgEl.call(zoom)
+    svgEl.on("dblclick.zoom", null);
 };
 
 function createViz(){
