@@ -68,7 +68,9 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                     .style("stroke-width", "0")
                     .attr("pointer-events", "none");
 
-                d3.select("#info").text(distance(d));
+                if (ctx.selected) {
+                    d3.select("#info").text(distance(d))
+                };
             })
             .on("click", function(event, d) {
                 thisNode = d3.select(this);
