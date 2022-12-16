@@ -13,6 +13,7 @@
         * {
             margin: 0;
             padding: 0;
+            list-style-type: none;
         }
 
         #footer {
@@ -47,21 +48,6 @@
             padding-bottom: .5em;
         }
 
-        .country {
-            fill: #EEE;
-            stroke: #BBB;
-        }
-
-        .lake {
-            fill: #bcd1f1;
-            stroke: none;
-        }
-
-        .river {
-            fill: none;
-            stroke: #bcd1f1;
-        }
-
         #footer {
             font-size: 10pt;
         }
@@ -72,14 +58,99 @@
         }
 
         #info {
-            margin-top: 1em;
-            height: 1em;
+            /* margin-top: 1em; */
+            /* height: 1em; */
+            top: 15pt;
+            height: calc(100vh - 30pt);
+            left: 15pt;
             font-family: monospace;
+        }
+
+        #left-panel {
+            display: inline-block;
+            position: fixed;
+            box-shadow: rgb(178, 178, 178) 0px 5px 10px;
+            top: 15pt;
+            height: calc(100vh - 30pt);
+            width: 400px;
+            left: 15pt;
+            text-align: center;
+            vertical-align: middle;
+            background-color: white;
+            font-family: "Helvetica Neue", Helvetica, sans-serif;
+        }
+
+        #map-menu {
+            position: relative;
+            width: 100%;
+            height: 150px;
+            background-color: #DDD;
+        }
+
+        #menu-title {
+            position: relative;
+            width: 100%;
+            height: 50px;
+            top: 15pt;
+            font-size: 40px;
+            width: calc(100% - 30pt);
+        }
+
+        #medium-selection {
+            position: relative;
+            top: 40px;
         }
 
         svg {
             display: block;
             border: 1px solid #DDD;
+        }
+
+        .menu {
+            position: relative;
+        }
+
+        .menu > li {
+            position: relative;
+            float: left;
+            color: #ffffff;
+            left: 15pt;
+            width: calc(100% - 30pt);
+            height: 40px;
+            line-height: 40px;
+            background: rgba(0, 0, 0, 0.7);
+            cursor: pointer;
+            font-size: 17px;
+        }
+        .ul {
+            list-style-type: none;
+        }
+        .sub-menu {
+            transform: scale(0);
+            transform-origin: top center;
+            transition: all 300ms ease-in-out;
+        }
+        .sub-menu li {
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px 0;
+            color: white;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            transform: scale(0);
+            transform-origin: top center;
+            transition: all 300ms ease-in-out;
+        }
+        .sub-menu li:last-child {
+            border-bottom: 0;
+        }
+        .sub-menu li:hover {
+            background: black;
+        }
+        .menu > li:hover .sub-menu li {
+            transform: scale(1);
+        }
+        .menu > li:hover .sub-menu {
+            transform: scale(1);
         }
     </style>
 </head>
@@ -87,6 +158,35 @@
 <body onload="createViz()">
     <div id="all">
         <div id="main">
+        </div>
+        <div id ="left-panel">
+            <div id="map-menu">
+                <div id="menu-title">
+                    Mobility in Paris
+                </div>
+                <ul id="medium-selection" class="menu">
+                    <li>
+                        Map displayed
+                        <ul class="sub-menu">
+                            <li>Taxi</li>
+                            <li>Public transportation</li>
+                            <li>Walking</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <!-- <ul class="menu">
+                <li>
+                  Italy
+                  <ul class="sub-menu">
+                    <li>Rome</li>
+                    <li>Milan</li>
+                    <li>Venice</li>
+                    <li>Lacio</li>
+                    <li>Florence</li>
+                  </ul>
+                </li>
+              </ul> -->
         </div>
         <div id="footer">
             <div id="info"> test </div>
