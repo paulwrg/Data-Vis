@@ -1,4 +1,4 @@
-const ctx = {
+let ctx = {
     w: 800,
     h: 400,
     map_origin_lat: 2.3506,
@@ -7,10 +7,27 @@ const ctx = {
     scale: 1,
     first: true,
     WEWD: "WE",
-};
+}
 
-const tree = {
-};
+/**
+ * times between src and target
+ */
+let results = {
+}
+
+/**
+ * backgroundMap; 
+ * zones; 
+ * landmarks; 
+ * water; 
+ * green; 
+ * roads; 
+ * overlay; 
+ * hover; 
+ * selected; 
+ */
+let tree = {
+}
 
 const PROJECTIONS = {
     ER: d3.geoConicConformal()
@@ -18,7 +35,7 @@ const PROJECTIONS = {
         .center([ctx.map_origin_lat,ctx.map_origin_lon])
         .scale(3200000)
         .translate([ctx.w/2,ctx.h/2]),
-};
+}
 
 const path4proj = d3.geoPath().projection(PROJECTIONS.ER);
 
@@ -76,7 +93,7 @@ function convertTime(totalInSeconds) {
     remainder = totalInSeconds - 3600 * hours;
     minutes = Math.floor(remainder/60);
     seconds = remainder - 60 * minutes;
-    return `${hours} hours ${minutes} and ${seconds}`;
+    return `${hours} hours ${minutes} mitues and ${Math.floor(seconds)} seconds`;
 }
 
 /** Returns the geo coordinates of the center of the bounding box of any element selected using d3.select(...). */
@@ -130,7 +147,7 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                     .style("stroke-width", "0")
                     .attr("pointer-events", "none");
                 if (ctx.selected) {
-                    d3.select("#info").text(distanceUber(d))
+                    d3.select("#info").text(d.properties.DISPLAY_NAME)
                 };
             })
             .on("mouseout", function(event,d) {
@@ -209,7 +226,7 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
         .on("zoom", zoomed);
     svgEl.call(zoom)
     svgEl.on("dblclick.zoom", null);
-};
+}
 
 function newOrigin(thisNode, d) {
     tree.selected.selectAll("path").remove();
@@ -241,22 +258,25 @@ function newTarget(thisNode, d) {
     tree.selected.node().appendChild(thisNode.node().cloneNode());
 
     ctx.target = d.properties.MOVEMENT_ID;
-    
-    box = getBoundingBoxCenter(thisNode);
 
-    const myHeaders = new Headers();
-    myHeaders.append('Content-Type', 'application/json');
-    myHeaders.append('Authorization', '3b036afe-0110-4202-b9ed-99718476c2e0');
-    fetch(`https://api.navitia.io/v1/coverage/sandbox/journeys?from=${ctx.src[0]}%3B${ctx.src[1]}&to=${box[0]}%3B${box[1]}&`,
+    results.walk = (3600/4) * haversineDistance(getBoundingBoxCenter(tree.selected.select("path:last-child")), ctx.src);
+    results.uber = distanceUber(d);
+    getMinJourney(thisNode).then(function(min) 
     {
-        method: 'GET',
-        headers: myHeaders,
-    }).then(function(response) {return response.json();})
-    .then(function(data) {public(data);});
-    if (ctx.src) {
-        console.log(haversineDistance(getBoundingBoxCenter(tree.selected.select("path:last-child")), ctx.src));
-        console.log(convertTime(3600 * haversineDistance(getBoundingBoxCenter(tree.selected.select("path:last-child")), ctx.src) / 4));
-    }
+        results.public = min;
+        printRes();
+    });
+}
+
+function printRes() {
+    d3.select("#temp")
+        .text(
+`
+public : ${convertTime(results.public)} \n
+walk : ${convertTime(results.walk)} \n
+uber : ${convertTime(results.uber)} \n
+`
+            )
 }
 
 function toggleWEWD() {
@@ -275,14 +295,31 @@ function toggleWEWD() {
             });
 }
 
-function public(json) {
-    console.log(json);
-    if (json.journeys)
+function getMinJourney(thisNode) {
+    box = getBoundingBoxCenter(thisNode);
+
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
+    myHeaders.append('Authorization', '3b036afe-0110-4202-b9ed-99718476c2e0');
+    let min =  fetch(`https://api.navitia.io/v1/coverage/sandbox/journeys?from=${ctx.src[0]}%3B${ctx.src[1]}&to=${box[0]}%3B${box[1]}&`,
     {
-        for (i=0; i<json.journeys.length;i++){
-            console.log(json.journeys[i].duration)
+        method: 'GET',
+        headers: myHeaders,
+    }).then(function(response) {return response.json();})
+    .then(function(json) {
+        console.log(json)
+        if (json.journeys)
+        {
+            var min = json.journeys[0].duration;
+            for (i=1; i<json.journeys.length;i++){
+                if (json.journeys[i].duration < min) {
+                    min = json.journeys[i].duration;
+                }
+            }
+            return min;
         }
-    }
+    });
+    return min;
 }
 
 function createViz(){
@@ -299,7 +336,7 @@ function createViz(){
          .attr("fill", "black");
     loadGeo(svgEl);
 
-};
+}
 
 
 /** data fetching and transforming */
@@ -318,4 +355,4 @@ function loadGeo(svgEl){
         svgEl.select("rect")
             .style("fill", "white");
     }).catch(function(error){console.log(error)});
-};
+}
