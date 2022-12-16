@@ -10,81 +10,92 @@
         <script type="text/javascript" src="js/paris.js"></script>
         <link rel="icon" href="paris_logo.png">
 <style type="text/css">
-*
-{
-	margin: 0;
-    padding: 0;
-}
+        * {
+            margin: 0;
+            padding: 0;
+        }
 
-#all {
-    width: 1200;
-}
+        #footer {
+            display: inline-block;
+            vertical-align: middle;
 
-#rightCol {
-    float:right;
-    font-family: sans-serif;
-}
+            position: fixed;
+            box-shadow: red 0px 8px 20px, red 0px 2px 5px;
+            width: 10%;
+            height: 4vh;
+            text-align: center;
+            vertical-align: middle;
+            top: 80vh;
+            left: 5%;
+            background-color: white;
+        }
 
-#vega1 {
-    padding-top: 1em;
-}
+        /* #all {
+            width: 1200;
+        } */
 
-#vega2 {
-    padding-bottom: .5em;
-}
+        #rightCol {
+            float: right;
+            font-family: sans-serif;
+        }
+        
+        #vega1 {
+            padding-top: 1em;
+        }
 
-.country {
-  fill: #EEE;
-  stroke: #BBB;
-}
+        #vega2 {
+            padding-bottom: .5em;
+        }
 
-.lake {
-  fill: #bcd1f1;
-  stroke: none;
-}
+        .country {
+            fill: #EEE;
+            stroke: #BBB;
+        }
 
-.river {
-  fill: none;
-  stroke: #bcd1f1;
-}
+        .lake {
+            fill: #bcd1f1;
+            stroke: none;
+        }
 
-#footer {
-  font-size:10pt;
-}
+        .river {
+            fill: none;
+            stroke: #bcd1f1;
+        }
 
-#cmds {
-    margin-top:.5em;
-    font-family: sans-serif;
-}
+        #footer {
+            font-size: 10pt;
+        }
 
-#info {
-    margin-top:1em;
-    height:1em;
-    font-family: monospace;
-}
+        #cmds {
+            margin-top: .5em;
+            font-family: sans-serif;
+        }
 
-svg {
-    display: block;
-    border:1px solid #DDD;
-}
+        #info {
+            margin-top: 1em;
+            height: 1em;
+            font-family: monospace;
+        }
 
-</style>
-    </head>
+        svg {
+            display: block;
+            border: 1px solid #DDD;
+        }
+    </style>
+</head>
 
-    <body onload="createViz()">
-        <div id="all">
-            <div id="rightCol">
-                <div id="inTheAir"></div>
-                <div id="alt"></div>
-            </div>
-            <div id="main">
-            </div>
-            <div id="footer">
-                <div id="info"></div>
-                <div id="cmds">Update: <input type="button" value="On" onclick="toggleUpdate();" id="updateBt"/>
-                </div>
-            </div>
+<body onload="createViz()">
+    <div id="all">
+        <div id="main">
         </div>
-    </body>
+        <div id="footer">
+            <div id="info"> test </div>
+            <!-- <div id="cmds">
+                Update: 
+                <input type="button" value="On" onclick="toggleUpdate();" id="updateBt" />
+            </div> -->
+        </div>
+    </div>
+</body>
 
 </html>

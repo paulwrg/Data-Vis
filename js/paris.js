@@ -79,7 +79,7 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                 selected.selectAll("path")
                     .style("stroke", "red")
                     .style("fill", "none")
-                    .style("stroke-width", 1.5*ctx.scale)
+                    .style("stroke-width", 5*ctx.scale)
                     .attr("pointer-events", "none");
                 console.log(selected.selectAll("path"));
 
@@ -125,7 +125,7 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
       scale = scale.substring(scale.indexOf('scale(')+6);
       scale = parseFloat(scale.substring(0, scale.indexOf(')')));
       ctx.scale = 1 / scale;
-      selected.selectAll("path").style("stroke-width", 1.5*ctx.scale);
+      selected.selectAll("path").style("stroke-width", 5*ctx.scale);
       if (ctx.scale != 1){
           d3.selectAll("image")
             .attr("transform", (d) => (getPlaneTransform(d)));
