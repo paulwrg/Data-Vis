@@ -7,6 +7,7 @@ const ctx = {
     scale: 1,
     first: true,
     WEWD: "WE",
+    MEDIUM: "TAXI"
 };
 
 const PROJECTIONS = {
@@ -294,6 +295,27 @@ function public(json) {
             console.log(json.journeys[i].duration)
         }
     }
+}
+
+function toggleTaxi() {
+    ctx.MEDIUM = "TAXI";
+    d3.select("#medium-selection li text")
+        .text("Uber ride: mean duration")
+    return;
+}
+
+function toggleMetro() {
+    ctx.MEDIUM = "METRO";
+    d3.select("#medium-selection li text")
+        .text("Public transport: mean duration")
+    return;
+}
+
+function toggleWalk() {
+    ctx.MEDIUM = "WALK";
+    d3.select("#medium-selection li text")
+        .text("Walking: mean duration")
+    return;
 }
 
 // function toggleUpdate(){
