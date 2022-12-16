@@ -1,6 +1,8 @@
 const ctx = {
     w: 800,
     h: 400,
+    map_origin_lat: 2.3506,
+    map_origin_lon: 48.8527,
     TRANSITION_DURATION: 1000,
     scale: 1,
     first: true,
@@ -8,8 +10,10 @@ const ctx = {
 };
 
 const PROJECTIONS = {
-    ER: d3.geoEquirectangular()
-        .center([2.3488000,48.8534100]).scale(160000)
+    ER: d3.geoConicConformal()
+        .parallels([44,49])
+        .center([ctx.map_origin_lat,ctx.map_origin_lon])
+        .scale(3200000)
         .translate([ctx.w/2,ctx.h/2]),
 };
 
@@ -33,6 +37,12 @@ function distance(d){
                 }
               }
     }
+}
+
+function getBoundingBoxCenter(selection) {
+    var element = selection.node();
+    var bbox = element.getBBox();
+    return PROJECTIONS.ER.invert([bbox.x + bbox.width/2, bbox.y + bbox.height/2]);
 }
 
 function drawMap(zonesData, waterData, greenData, roadData, svgEl){
@@ -67,7 +77,6 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
             .style("stroke", "none")
             .style("stroke-width", "0.5")
             .on("mouseover", function(event,d) {
-                // console.log(d.properties.MOVEMENT_ID);
                 thisNode = d3.select(this);
                 hover.selectAll("path")
                     .remove();
@@ -98,10 +107,13 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                 });
                 selected.node().appendChild(thisNode.node().cloneNode());
                 selected.selectAll("path")
+                    .attr("id", "selected_path")
                     .style("stroke", "red")
                     .style("fill", "none")
                     .style("stroke-width", 5*ctx.scale)
                     .attr("pointer-events", "none");
+
+                console.log(getBoundingBoxCenter(d3.select("#selected_path")));
             })
             .on("click", function(event, d) {
                 thisNode = d3.select(this);
@@ -173,11 +185,10 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
       }
     }
     let zoom = d3.zoom()
-        .scaleExtent([1, 40])
-        .on("zoom", zoomed)
+        .scaleExtent([0.03, 3])
+        .on("zoom", zoomed);
     svgEl.call(zoom)
     svgEl.on("dblclick.zoom", null);
-;
 };
 
 function toggleWEWD() {
