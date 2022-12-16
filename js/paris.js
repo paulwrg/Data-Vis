@@ -89,9 +89,9 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                 zones.selectAll("path.zone")
                     .style("fill", function(d) {
                         dist = distance(d);
-                        return dist ? d3.interpolateRdYlGn(Math.exp(-dist/500 )) : "black";});
+                        return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";});
                 green.selectAll("path.green")
-                    .style("opacity", 0.5);
+                    .style("opacity", 0);
             });
 
     water.selectAll("path.water")
