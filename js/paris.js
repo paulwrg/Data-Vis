@@ -309,6 +309,7 @@ function newTarget(thisNode, d) {
     });
 
     drawArrow();
+    drawChart();
 }
 
 function drawArrow() {
@@ -438,6 +439,10 @@ function divergentColorScale(duration) {
     return "black";
 }
 
+function colorScale(value) {
+    return d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-value);
+}
+
 function toggleLegendDivergent() {
     d3.select("#legend-title")
         .text("Uber travel time excess during the week (mins)");
@@ -512,6 +517,7 @@ function toggleTaxiWEWD() {
     toggleLegendDivergent();
     if (ctx.src) {
         drawTaxiWEWD();
+        drawChart();
     }
 }
 
@@ -605,4 +611,67 @@ function loadGeo(svgEl){
         svgEl.select("rect")
             .style("fill", "white");
     }).catch(function(error){console.log(error)});
+}
+
+function drawChart() {
+    d3.select("#bar").remove();
+    width = 300;
+    height = 200;
+    margin = 100;
+
+    var svg = d3.select("#left-panel").insert("svg", "#map-menu")
+        .attr("id", "bar")
+        .attr("width", width+margin)
+        .attr("height", height+margin)
+        .attr("transform", "translate(" + 0 + "," + 190 + ")");
+    var g = svg.append("g").attr("transform", "translate(" + margin/2 + "," + margin/2 + ")");;
+    
+    var xScale = d3.scaleBand().range([0, width]).padding(0.4),
+    yScale = d3.scaleLinear().range([height, 0]);
+
+    xScale.domain([0,1,2]);
+    yScale.domain([0, d3.max([results.public, results.walk, results.uber])]);
+    
+    g.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(xScale))
+    .append("text")
+    .attr("y", height - 250)
+    .attr("x", width - 100)
+    .attr("text-anchor", "end")
+    .attr("stroke", "black");
+    
+    g.append("g")
+    .call(d3.axisLeft(yScale).tickFormat(function(d){
+        return d;
+    })
+    .ticks(5))
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 6)
+    .attr("dy", "-5.1em")
+    .attr("text-anchor", "end")
+    .attr("stroke", "black");
+    
+    g.append("rect")
+        .attr("class", "bar")
+        .attr("x", xScale(0))
+        .attr("y", yScale(results.public))
+        .attr("width", xScale.bandwidth())
+        .attr("height", height - yScale(results.public))
+        .style("fill", colorScale(results.public));
+    g.append("rect")
+        .attr("class", "bar")
+        .attr("x", xScale(1))
+        .attr("y", yScale(results.uber))
+        .attr("width", xScale.bandwidth())
+        .attr("height", height - yScale(results.uber))
+        .style("fill", colorScale(results.uber));
+    g.append("rect")
+        .attr("class", "bar")
+        .attr("x", xScale(2))
+        .attr("y", yScale(results.walk))
+        .attr("width", xScale.bandwidth())
+        .attr("height", height - yScale(results.walk))
+        .style("fill", colorScale(results.walk));
 }
