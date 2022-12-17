@@ -260,19 +260,25 @@ function newTarget(thisNode, d) {
 }
 
 function toggleWEWD() {
-    if (d3.select("#WEWDbt").attr("value") == "WE"){
-        d3.select("#WEWDbt").attr("value", "WD");
-        ctx.WEWD = "WD";     
+    if (ctx.WEWD == "WE"){
+        ctx.WEWD = "WD";
+        d3.select("#wewd-slider")
+            .transition()
+            .duration(300)
+            .style("left", "23px");
     }
     else {
-        d3.select("#WEWDbt").attr("value", "WE");
         ctx.WEWD = "WE";
+        d3.select("#wewd-slider")
+            .transition()
+            .duration(300)
+            .style("left", "1px");
     }
     d3.select("#zones").selectAll("path.zone")
-            .style("fill", function(d) {
-                dist = distanceUber(d);
-                return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
-            });
+        .style("fill", function(d) {
+            dist = distanceUber(d);
+            return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
+        });
 }
 
 function public(json) {

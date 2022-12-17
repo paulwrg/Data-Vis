@@ -83,7 +83,7 @@
         #map-menu {
             position: relative;
             width: 100%;
-            height: 150px;
+            height: 190px;
             background-color: #DDD;
         }
 
@@ -99,6 +99,52 @@
         #medium-selection {
             position: relative;
             top: 40px;
+        }
+
+        #wewd {
+            position:absolute;
+            top: 150px;
+            height: 20px;
+            width: 100%;
+        }
+
+        #wewd-background {
+            position: absolute;
+            top: 0;
+            left: calc(50% - 30px);
+            width: 60px;
+            height: 20px;
+            border-radius: 10px;
+            background-color: rgb(50, 50, 50);
+        }
+
+        #wewd-slider {
+            position:relative;
+            top: 1px;
+            left: 1px;
+            width: 36px;
+            height: 18px;
+            border-radius: 9px;
+            background-color: #DDD;
+            pointer-events: none;
+        }
+
+        #wewd .WD {
+            position:absolute;
+            top: 0px;
+            left: 20%;
+            width: 60%;
+            height: 20px;
+            text-align: left;
+        }
+
+        #wewd .WE {
+            position:absolute;
+            top: 0px;
+            left: 20%;
+            width: 60%;
+            height: 20px;
+            text-align: right;
         }
 
         svg {
@@ -139,6 +185,7 @@
             transform: scale(0);
             transform-origin: top center;
             transition: all 300ms ease-in-out;
+            user-select: none;
         }
         .sub-menu li:last-child {
             border-bottom: 0;
@@ -168,38 +215,33 @@
                 <div id="menu-title">
                     Mobility in Paris
                 </div>
+                <ul id="wewd">
+                    <text class="WD">
+                        Week-days
+                    </text>
+                    <text class="WE">
+                        Week-ends
+                    </text>
+                    <div onclick="toggleWEWD();" id="wewd-background">
+                        <div id="wewd-slider"></div>
+                    </div>
+                </ul>
                 <ul id="medium-selection" class="menu">
                     <li>
                         <text>
                             Map displayed
                         </text>
                         <ul class="sub-menu">
-                            <li onclick="toggleTaxi();">Taxi</li>
+                            <li onclick="toggleTaxi();">Uber</li>
                             <li onclick="toggleMetro();">Public transportation</li>
                             <li onclick="toggleWalk();">Walking</li>
                         </ul>
                     </li>
                 </ul>
             </div>
-            <!-- <ul class="menu">
-                <li>
-                  Italy
-                  <ul class="sub-menu">
-                    <li>Rome</li>
-                    <li>Milan</li>
-                    <li>Venice</li>
-                    <li>Lacio</li>
-                    <li>Florence</li>
-                  </ul>
-                </li>
-              </ul> -->
         </div>
         <div id="footer">
             <div id="info"> test </div>
-            <div id="WEWD">
-                WeekEnd / WeekDay: 
-                <input type="button" value="WE" onclick="toggleWEWD();" id="WEWDbt" />
-            </div>
         </div>
     </div>
 </body>
