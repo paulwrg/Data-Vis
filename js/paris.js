@@ -306,8 +306,9 @@ function newTarget(thisNode, d) {
 
     ctx.target = d.properties.MOVEMENT_ID;
 
-    results.walk = (3600/4) * haversineDistance(getBoundingBoxCenter(tree.selected.select("path:last-child")), ctx.src);
+    results.walk = (3600/15) * haversineDistance(getBoundingBoxCenter(tree.selected.select("path:last-child")), ctx.src);
     results.uber = distanceUber(d);
+    results.uberCO2 = 300 * haversineDistance(getBoundingBoxCenter(tree.selected.select("path:last-child")), ctx.src);
     getMinJourney(thisNode).then(function(min) 
     {
         results.public = min;
@@ -315,6 +316,7 @@ function newTarget(thisNode, d) {
     });
 
     drawArrow();
+    drawChart();
 }
 
 function drawArrow() {
@@ -388,7 +390,7 @@ function toggleWEWD() {
 }
 
 function getMinJourney(thisNode) {
-    box = getBoundingBoxCenter(thisNode);
+    var box = getBoundingBoxCenter(thisNode);
 
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
@@ -402,13 +404,17 @@ function getMinJourney(thisNode) {
         if (json.journeys)
         {
             var min = json.journeys[0].duration;
+            var CO2 = json.journeys[0].co2_emission.value;
             for (i=1; i<json.journeys.length;i++){
                 if (json.journeys[i].duration < min) {
                     min = json.journeys[i].duration;
+                    CO2 = json.journeys[i].co2_emission.value;
                 }
             }
+            results.publicCO2 = CO2;
             return min;
         }
+        results.publicCO2 = null;
     });
     return min;
 }
@@ -452,6 +458,10 @@ function divergentColorScaleRelative(pct) {
     if (pct < 0.15) return "#a15ce2";
     if (pct < 3600) return "#57248a";
     return "black";
+}
+
+function colorScale(value) {
+    return d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-value);
 }
 
 function toggleLegendDivergent() {
@@ -547,6 +557,7 @@ function toggleTaxiWEWD() {
     toggleLegendDivergent();
     if (ctx.src) {
         drawTaxiWEWD();
+        drawChart();
     }
 }
 
@@ -579,7 +590,7 @@ function drawTaxiWEWDRelative() {
 function toggleMetro() {
     ctx.MEDIUM = "METRO";
     d3.select("#medium-selection li text")
-        .text("Public transport: mean duration")
+        .text("Public transport: live esttimate")
     d3.select("#black-label")
         .text("60+/No data")
 
@@ -627,7 +638,7 @@ function drawMetro() {
 function toggleWalk() {
     ctx.MEDIUM = "WALK";
     d3.select("#medium-selection li text")
-        .text("Walking: mean duration")
+        .text("Cycling")
     d3.select("#black-label")
         .text("60+/No data")
     back2black();
@@ -639,7 +650,7 @@ function drawWalk() {
     console.log("Draw Walk");
     tree.zones.selectAll("path.zone")
         .style("fill", function(d) {
-            dist = (3600/4) * haversineDistance(getBoundingBoxCenter(d3.select(this)), ctx.src);
+            dist = (3600/15) * haversineDistance(getBoundingBoxCenter(d3.select(this)), ctx.src);
             return dist<3600 ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
         });
 }
@@ -660,4 +671,170 @@ function loadGeo(svgEl){
         svgEl.select("rect")
             .style("fill", "white");
     }).catch(function(error){console.log(error)});
+}
+
+function drawChart() {
+    d3.select("#bar").remove();
+    width = 300;
+    height = 200;
+    margin = 100;
+
+    var charts = d3.select("#left-panel").insert("div", "#map-menu")
+        .attr("id", "bar")
+        .style("position", "absolute")
+        .style("top", "190px")
+        .style("overflow", "scroll")
+        .style("pointer-events", "auto");
+
+    charts.append("div").text("Duration of journeys")
+        .style("position", "relative")
+        .style("top", "0px")
+        .style("left", "0px");;
+
+    var svgDuration = charts.append("svg")
+        .attr("width", width+margin)
+        .attr("height", height+margin)
+        .style("position", "relative");
+    var g = svgDuration.append("g").attr("transform", "translate(" + margin/2 + "," + margin/2 + ")");;
+    
+    var xScale = d3.scaleBand().range([0, width]).padding(0.4),
+    yScale = d3.scaleLinear().range([height, 0]);
+
+    xScale.domain(["public", "uber", "bicycle"]);
+    yScale.domain([0, d3.max([results.public, results.walk, results.uber])/60]);
+    
+    g.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(xScale))
+        .append("text")
+        .attr("y", height - 250)
+        .attr("x", width - 100)
+        .attr("text-anchor", "end")
+        .attr("stroke", "black");
+    
+    g.append("g")
+    .call(d3.axisLeft(yScale).tickFormat(function(d){
+        return d;
+    })
+    .ticks(5))
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 6)
+    .attr("dy", "-5.1em")
+    .attr("text-anchor", "end")
+    .attr("stroke", "black");
+    
+    g.append("rect")
+        .attr("class", "bar")
+        .attr("x", xScale("public"))
+        .attr("y", yScale(results.public/60))
+        .attr("width", xScale.bandwidth())
+        .attr("height", height - yScale(results.public/60))
+        .style("fill", colorScale(results.public))
+    if (!results.public) {
+        g.append("text")
+            .attr("y", xScale("public") + xScale.bandwidth()/2)
+            .attr("x", -height/2)
+            .text("NO DATA")
+            .attr("transform", "rotate(-90)")
+            .style("font-weight", "bold");
+    }
+    g.append("rect")
+        .attr("class", "bar")
+        .attr("x", xScale("uber"))
+        .attr("y", yScale(results.uber/60))
+        .attr("width", xScale.bandwidth())
+        .attr("height", height - yScale(results.uber/60))
+        .style("fill", colorScale(results.uber));
+    if (!results.uber) {
+        g.append("text")
+            .attr("y", xScale("uber") + xScale.bandwidth()/2)
+            .attr("x", -height/2)
+            .text("NO DATA")
+            .attr("transform", "rotate(-90)")
+            .style("font-weight", "bold");
+    }
+    g.append("rect")
+        .attr("class", "bar")
+        .attr("x", xScale("bicycle"))
+        .attr("y", yScale(results.walk/60))
+        .attr("width", xScale.bandwidth())
+        .attr("height", height - yScale(results.walk/60))
+        .style("fill", colorScale(results.walk));
+
+    charts.append("div").text("CO2 Emissions of journeys")
+        .style("position", "relative")
+        // .style("top", "300px")
+        // .style("left", "0px");
+    var svgCO2 = charts.append("svg")
+        .attr("width", width+margin)
+        .attr("height", height+margin)
+        .style("position", "relative")
+        // .style("top", "300px");
+    var g = svgCO2.append("g").attr("transform", "translate(" + margin/2 + "," + margin/2 + ")");
+    
+    var xScale = d3.scaleBand().range([0, width]).padding(0.4),
+    yScale = d3.scaleLinear().range([height, 0]);
+
+    xScale.domain(["public", "uber", "bicycle"]);
+    yScale.domain([0, d3.max([results.publicCO2, 0, results.uberCO2])]);
+    
+    g.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(xScale))
+        .append("text")
+        .attr("y", height - 250)
+        .attr("x", width - 100)
+        .attr("text-anchor", "end")
+        .attr("stroke", "black");
+    
+    g.append("g")
+    .call(d3.axisLeft(yScale).tickFormat(function(d){
+        return d;
+    })
+    .ticks(5))
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 6)
+    .attr("dy", "-5.1em")
+    .attr("text-anchor", "end")
+    .attr("stroke", "black");
+    
+    g.append("rect")
+        .attr("class", "bar")
+        .attr("x", xScale("public"))
+        .attr("y", yScale(results.publicCO2))
+        .attr("width", xScale.bandwidth())
+        .attr("height", height - yScale(results.publicCO2))
+        .style("fill", colorScale(results.public));
+    if (!results.public) {
+        g.append("text")
+            .attr("y", xScale("public") + xScale.bandwidth()/2)
+            .attr("x", -height/2)
+            .text("NO DATA")
+            .attr("transform", "rotate(-90)")
+            .style("font-weight", "bold");
+    }
+    g.append("rect")
+        .attr("class", "bar")
+        .attr("x", xScale("uber"))
+        .attr("y", yScale(results.uberCO2))
+        .attr("width", xScale.bandwidth())
+        .attr("height", height - yScale(results.uberCO2))
+        .style("fill", results.uber ? colorScale(results.uber) : "none");
+    if (!results.uber) {
+        g.append("text")
+            .attr("y", xScale("uber") + xScale.bandwidth()/2)
+            .attr("x", -height/2)
+            .text("NO DATA")
+            .attr("transform", "rotate(-90)")
+            .style("font-weight", "bold");
+    }
+    g.append("rect")
+        .attr("class", "bar")
+        .attr("x", xScale("bicycle"))
+        .attr("y", yScale(0))
+        .attr("width", xScale.bandwidth())
+        .attr("height", height - yScale(0))
+        .style("fill", colorScale(0));
 }
