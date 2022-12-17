@@ -105,6 +105,7 @@ function getBoundingBoxCenter(selection) {
 }
 
 function drawMap(zonesData, waterData, greenData, roadData, svgEl){
+    console.log(zonesData);
     ctx.mapG = svgEl.append("g")
                     .attr("id", "map");
 
@@ -313,7 +314,7 @@ function getMinJourney(thisNode) {
         headers: myHeaders,
     }).then(function(response) {return response.json();})
     .then(function(json) {
-        console.log(json)
+        // console.log(json)
         if (json.journeys)
         {
             var min = json.journeys[0].duration;
@@ -355,7 +356,51 @@ function toggleMetro() {
     ctx.MEDIUM = "METRO";
     d3.select("#medium-selection li text")
         .text("Public transport: mean duration")
+
+    back2black();
+
+    drawMetro();
+    
     return;
+}
+
+
+function drawMetro() {
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
+    myHeaders.append('Authorization', '3b036afe-0110-4202-b9ed-99718476c2e0');
+    let min =  fetch(`https://api.navitia.io/v1/coverage/sandbox/isochrones?from=${ctx.src[0]}%3B${ctx.src[1]}&boundary_duration%5B%5D=300&boundary_duration%5B%5D=600&boundary_duration%5B%5D=1200&boundary_duration%5B%5D=1800&boundary_duration%5B%5D=2700&boundary_duration%5B%5D=3600&`,
+    // [-3600, -2700, -1800, -1200, -1200, -600, -300]
+    {
+        method: 'GET',
+        headers: myHeaders,
+    }).then(function(response) {return response.json();})
+    .then(function(json) {
+        console.log(json);
+        for (i=0; i<json.isochrones.length; i++){
+            json.isochrones[i]['geometry'] = json.isochrones[i].geojson;
+            json.isochrones[i]['type'] = "Feature";
+            json.isochrones[i]['i'] = i;
+        }
+        console.log(json);
+
+        let color = ["red","blue","green","red","blue","green"];
+
+        tree.zones.append("g").attr("id", "test")
+            .selectAll("path.test")
+            .data(json.isochrones)
+            .enter()
+            .append("path")
+            .attr("d", path4proj)
+            .attr("class", "test")
+            .style("fill", data => color[data.i]);
+    });
+}
+function back2black() {
+    tree.zones.select("#test").remove();
+    tree.zones.selectAll("path.zone")
+    // Color the zones in the map according to the time it takes to get there from selected point
+    .style("fill", "black");
 }
 
 function toggleWalk() {
