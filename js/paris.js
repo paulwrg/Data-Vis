@@ -74,20 +74,43 @@ function distanceUber(d){
         case "WE":
             for (let i = 0; i < ctx.filteredWE.length; i++) {
                 if (ctx.filteredWE[i].dstid == d.properties.MOVEMENT_ID) {
-                    // console.log(ctx.filteredWE[i].mean_travel_time)
                     return ctx.filteredWE[i].mean_travel_time;
                 }
-              }
+            }
             break;
         case "WD":
             for (let i = 0; i < ctx.filteredWD.length; i++) {
                 if (ctx.filteredWD[i].dstid == d.properties.MOVEMENT_ID) {
-                    // console.log(ctx.filteredWE[i].mean_travel_time)
                     return ctx.filteredWD[i].mean_travel_time;
                 }
-              }
+            }
             break;
     }
+}
+
+function differenceWEWDUber(d){
+    foundWE = false;
+    foundWD = false;
+    if (d.properties.MOVEMENT_ID == ctx.selected) return 0;
+    for (let i = 0; i < ctx.filteredWE.length; i++) {
+        if (ctx.filteredWE[i].dstid == d.properties.MOVEMENT_ID) {
+            we = ctx.filteredWE[i].mean_travel_time;
+            foundWE = true;
+            break;
+        }
+    }
+    for (let i = 0; i < ctx.filteredWD.length; i++) {
+        if (ctx.filteredWD[i].dstid == d.properties.MOVEMENT_ID) {
+            wd = ctx.filteredWD[i].mean_travel_time;
+            foundWD = true;
+            break;
+        }
+    }
+    if (foundWE && foundWD)
+    {
+        return wd - we;
+    }
+    return 10000;
 }
 
 // Converts time from seconds to hours-minutes-seconds format
@@ -153,6 +176,8 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                 if (ctx.selected) {
                     d3.select("#info").text(d.properties.DISPLAY_NAME)
                 };
+                console.log(distanceUber(d));
+                console.log(differenceWEWDUber(d));
             })
             .on("mouseout", function(event,d) {
                 tree.hover.selectAll("path")
@@ -253,6 +278,9 @@ function newOrigin(thisNode, d) {
         case "METRO":
             drawMetro();
             break;
+        case "TAXI-WEWD":
+            drawTaxiWEWD();
+            break;
         case "WALK":
         case "TAXI":
         default:
@@ -303,7 +331,10 @@ function toggleWEWD() {
             .style("left", "1px");
     }
     if (ctx.MEDIUM == "TAXI") {
-        drawTaxi();
+        if (ctx.src)
+        {
+            drawTaxi();
+        }
     }
 }
 
@@ -363,17 +394,43 @@ function toggleTaxi() {
         .text("No data")
     
     back2black();
-    drawTaxi();
+    console.log(ctx.src);
+    if (ctx.src)
+    {
+        drawTaxi();
+    }
 }
 
 function drawTaxi() {
+    console.log("Draw taxi");
+    tree.zones.selectAll("path.zone")
+        .style("fill", function(d) {
+            dist = distanceUber(d);
+            return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
+        });
+}
+
+function toggleTaxiWEWD() {
+    ctx.MEDIUM = "TAXI-WEWD";
+    d3.select("#medium-selection li text")
+        .text("Uber week-ends vs week-days")
+    d3.select("#black-label")
+        .text("No data")
+    
+    back2black();
     if (ctx.src) {
-        tree.zones.selectAll("path.zone")
-            .style("fill", function(d) {
-                dist = distanceUber(d);
-                return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
-            });
+        drawTaxiWEWD();
     }
+}
+
+function drawTaxiWEWD() {
+    console.log("Draw taxi WEWD");
+    tree.zones.selectAll("path.zone")
+        .style("fill", function(d) {
+            return differenceWEWDUber(d) ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-differenceWEWDUber(d)): "black";
+            // dist = differenceWEWDUber(d);
+            // return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
+        });
 }
 
 function toggleMetro() {
@@ -381,7 +438,7 @@ function toggleMetro() {
     d3.select("#medium-selection li text")
         .text("Public transport: mean duration")
     d3.select("#black-label")
-        .text("60+")
+        .text("60+/No data")
 
     back2black();
     if (ctx.src) {
@@ -390,6 +447,7 @@ function toggleMetro() {
 }
 
 function drawMetro() {
+    console.log("Draw Metro");
     back2black();
 
     const myHeaders = new Headers();
@@ -429,7 +487,7 @@ function toggleWalk() {
     d3.select("#medium-selection li text")
         .text("Walking: mean duration")
     d3.select("#black-label")
-        .text("60+")
+        .text("60+/No data")
     back2black();
 }
 

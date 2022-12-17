@@ -273,6 +273,7 @@
                         </text>
                         <ul class="sub-menu">
                             <li onclick="toggleTaxi();">Uber</li>
+                            <li onclick="toggleTaxiWEWD();">Uber week-ends vs week-days</li>
                             <li onclick="toggleMetro();">Public transportation</li>
                             <li onclick="toggleWalk();">Walking</li>
                         </ul>
@@ -295,12 +296,12 @@
                             <div class="legend-scale-color" style="background: black;"></div>
                         </div>
                         <div class="legend-scale-label-group">
-                            <div class="legend-scale-label"> 0 </div>
-                            <div class="legend-scale-label"> 5 </div>
-                            <div class="legend-scale-label"> 10 </div>
-                            <div class="legend-scale-label"> 20 </div>
-                            <div class="legend-scale-label"> 30 </div>
-                            <div class="legend-scale-label"> 45 </div>
+                            <div class="legend-scale-label" id="dur0_diff-15"> 0 </div>
+                            <div class="legend-scale-label" id="dur5_diff-15"> 5 </div>
+                            <div class="legend-scale-label" id="dur10_diff-15"> 10 </div>
+                            <div class="legend-scale-label" id="dur20_diff-15"> 20 </div>
+                            <div class="legend-scale-label" id="dur30_diff-15"> 30 </div>
+                            <div class="legend-scale-label" id="dur45_diff-15"> 45 </div>
                             <div id="black-label" class="legend-scale-label"> No data </div>
                         </div>
                     </div>
