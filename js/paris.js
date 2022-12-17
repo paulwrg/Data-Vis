@@ -78,6 +78,7 @@ function distanceUber(d){
                     return ctx.filteredWE[i].mean_travel_time;
                 }
               }
+            break;
         case "WD":
             for (let i = 0; i < ctx.filteredWD.length; i++) {
                 if (ctx.filteredWD[i].dstid == d.properties.MOVEMENT_ID) {
@@ -85,6 +86,7 @@ function distanceUber(d){
                     return ctx.filteredWD[i].mean_travel_time;
                 }
               }
+            break;
     }
 }
 
@@ -235,13 +237,6 @@ function newOrigin(thisNode, d) {
     ctx.selected = d.properties.MOVEMENT_ID;
     ctx.filteredWE = ctx.distancesWE.filter(d => d.sourceid == ctx.selected);
     ctx.filteredWD = ctx.distancesWD.filter(d => d.sourceid == ctx.selected);
-    tree.zones.selectAll("path.zone")
-
-    // Color the zones in the map according to the time it takes to get there from selected point
-    .style("fill", function(d) {
-        dist = distanceUber(d);
-        return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
-    });
 
     tree.selected.node().appendChild(thisNode.node().cloneNode());
     tree.selected.selectAll("path")
@@ -252,6 +247,18 @@ function newOrigin(thisNode, d) {
         .attr("pointer-events", "none");
 
     ctx.src = getBoundingBoxCenter(d3.select("#selected_path"));
+
+    // Color the zones in the map according to the time it takes to get there from selected point
+    switch (ctx.MEDIUM) {
+        case "METRO":
+            drawMetro();
+            break;
+        case "WALK":
+        case "TAXI":
+        default:
+            drawTaxi();
+            break;
+    }
 }
 
 function newTarget(thisNode, d) {
@@ -295,11 +302,9 @@ function toggleWEWD() {
             .duration(300)
             .style("left", "1px");
     }
-    d3.select("#zones").selectAll("path.zone")
-        .style("fill", function(d) {
-            dist = distanceUber(d);
-            return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
-        });
+    if (ctx.MEDIUM == "TAXI") {
+        drawTaxi();
+    }
 }
 
 function getMinJourney(thisNode) {
@@ -342,30 +347,51 @@ function createViz(){
          .attr("height", "100%")
          .attr("fill", "black");
     loadGeo(svgEl);
+}
 
+function back2black() {
+    tree.zones.select("#isochrone").remove();
+    tree.zones.selectAll("path.zone")
+        .style("fill", "black");
 }
 
 function toggleTaxi() {
     ctx.MEDIUM = "TAXI";
     d3.select("#medium-selection li text")
         .text("Uber ride: mean duration")
-    return;
+    d3.select("#black-label")
+        .text("No data")
+    
+    back2black();
+    drawTaxi();
+}
+
+function drawTaxi() {
+    if (ctx.src) {
+        tree.zones.selectAll("path.zone")
+            .style("fill", function(d) {
+                dist = distanceUber(d);
+                return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
+            });
+    }
 }
 
 function toggleMetro() {
     ctx.MEDIUM = "METRO";
     d3.select("#medium-selection li text")
         .text("Public transport: mean duration")
+    d3.select("#black-label")
+        .text("60+")
 
     back2black();
-
-    drawMetro();
-    
-    return;
+    if (ctx.src) {
+        drawMetro();
+    }
 }
 
-
 function drawMetro() {
+    back2black();
+
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
     myHeaders.append('Authorization', '3b036afe-0110-4202-b9ed-99718476c2e0');
@@ -384,30 +410,27 @@ function drawMetro() {
         }
         console.log(json);
 
-        let color = ["red","blue","green","red","blue","green"];
+        let color = ["rgb(0, 104, 55)","rgb(76, 176, 92)","rgb(182, 224, 118)","rgb(253, 190, 112)","rgb(233, 89, 58)","rgb(165, 0, 38)"];
 
-        tree.zones.append("g").attr("id", "test")
-            .selectAll("path.test")
+        tree.zones.append("g").attr("id", "isochrone")
+            .selectAll("path.isochrone")
             .data(json.isochrones)
             .enter()
             .append("path")
             .attr("d", path4proj)
-            .attr("class", "test")
+            .attr("class", "isochrone")
+            .attr("pointer-events", "none")
             .style("fill", data => color[data.i]);
     });
-}
-function back2black() {
-    tree.zones.select("#test").remove();
-    tree.zones.selectAll("path.zone")
-    // Color the zones in the map according to the time it takes to get there from selected point
-    .style("fill", "black");
 }
 
 function toggleWalk() {
     ctx.MEDIUM = "WALK";
     d3.select("#medium-selection li text")
         .text("Walking: mean duration")
-    return;
+    d3.select("#black-label")
+        .text("60+")
+    back2black();
 }
 
 /** data fetching and transforming */

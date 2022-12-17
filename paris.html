@@ -23,7 +23,9 @@
             position: fixed;
             box-shadow: rgb(172 172 172) -2px 2px 5px 0px;
             width: 415px;
-            height: 70px;
+            height: 57px;
+            padding-top: 2pt;
+            padding-bottom: 2pt;
             vertical-align: middle;
             bottom: 15pt;
             right: 15pt;
@@ -230,16 +232,16 @@
             font-size: 12px;
             line-height: 24px;
             margin-bottom: 0;
-            font-weight: 500;
+            font-weight: bolder;
+            color: black;
         }
 
         .small {
             font-size: 12px;
-            font-size: 0.85714rem;
             font-weight: 400;
             font-family: "Helvetica Neue", Helvetica, sans-serif;
-            line-height: 1.66667;
             text-align: left;
+            color: #636363;
         }
     </style>
 </head>
@@ -299,7 +301,7 @@
                             <div class="legend-scale-label"> 20 </div>
                             <div class="legend-scale-label"> 30 </div>
                             <div class="legend-scale-label"> 45 </div>
-                            <div class="legend-scale-label"> No data </div>
+                            <div id="black-label" class="legend-scale-label"> No data </div>
                         </div>
                     </div>
                 </div>
