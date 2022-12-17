@@ -176,8 +176,6 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
                 if (ctx.selected) {
                     d3.select("#info").text(d.properties.DISPLAY_NAME)
                 };
-                console.log(distanceUber(d));
-                console.log(differenceWEWDUber(d));
             })
             .on("mouseout", function(event,d) {
                 tree.hover.selectAll("path")
@@ -350,7 +348,6 @@ function getMinJourney(thisNode) {
         headers: myHeaders,
     }).then(function(response) {return response.json();})
     .then(function(json) {
-        // console.log(json)
         if (json.journeys)
         {
             var min = json.journeys[0].duration;
@@ -386,6 +383,54 @@ function back2black() {
         .style("fill", "black");
 }
 
+function divergentColorScale(duration) {
+    if (duration < -300) return "rgb(0, 77, 92)";
+    if (duration < 0) return "rgb(129, 155, 163)";
+    if (duration < 300) return "rgb(241, 241, 241)"
+    if (duration < 600) return "rgb(242, 215, 172)";
+    if (duration < 900) return "rgb(222, 167, 4)";
+    if (duration < 3600) return "rgb(132, 87, 38)";
+    return "black";
+}
+
+function toggleLegendDivergent() {
+    d3.select("#legend-title")
+        .text("Uber travel time excess during the week (mins)");
+    
+    d3.select("#dur00_diff-10").text("-10");
+    d3.select("#dur05_diff-05").text("-5");
+    d3.select("#dur10_diff00").text("0");
+    d3.select("#dur20_diff05").text("+5");
+    d3.select("#dur30_diff10").text("+10");
+    d3.select("#dur45_diff15").text("+15");
+
+    d3.select("#color_dur00_diff-10").style("background", "rgb(0, 77, 92)");
+    d3.select("#color_dur05_diff-05").style("background", "rgb(129, 155, 163)");
+    d3.select("#color_dur10_diff00").style("background", "rgb(241, 241, 241)");
+    d3.select("#color_dur20_diff05").style("background", "rgb(242, 215, 172)");
+    d3.select("#color_dur30_diff10").style("background", "rgb(222, 167, 4)");
+    d3.select("#color_dur45_diff15").style("background", "rgb(132, 87, 38)");
+}
+
+function toggleLegendLinear() {
+    d3.select("#legend-title")
+        .text("Travel Times (mins)");
+    
+    d3.select("#dur00_diff-10").text("0");
+    d3.select("#dur05_diff-05").text("5");
+    d3.select("#dur10_diff00").text("10");
+    d3.select("#dur20_diff05").text("20");
+    d3.select("#dur30_diff10").text("30");
+    d3.select("#dur45_diff15").text("45");
+
+    d3.select("#color_dur00_diff-10").style("background", "rgb(0, 104, 55)");
+    d3.select("#color_dur05_diff-05").style("background", "rgb(76, 176, 92)");
+    d3.select("#color_dur10_diff00").style("background", "rgb(182, 224, 118)");
+    d3.select("#color_dur20_diff05").style("background", "rgb(253, 190, 112)");
+    d3.select("#color_dur30_diff10").style("background", "rgb(233, 89, 58)");
+    d3.select("#color_dur45_diff15").style("background", "rgb(165, 0, 38)");
+}
+
 function toggleTaxi() {
     ctx.MEDIUM = "TAXI";
     d3.select("#medium-selection li text")
@@ -394,6 +439,7 @@ function toggleTaxi() {
         .text("No data")
     
     back2black();
+    toggleLegendLinear();
     console.log(ctx.src);
     if (ctx.src)
     {
@@ -418,6 +464,7 @@ function toggleTaxiWEWD() {
         .text("No data")
     
     back2black();
+    toggleLegendDivergent();
     if (ctx.src) {
         drawTaxiWEWD();
     }
@@ -426,11 +473,7 @@ function toggleTaxiWEWD() {
 function drawTaxiWEWD() {
     console.log("Draw taxi WEWD");
     tree.zones.selectAll("path.zone")
-        .style("fill", function(d) {
-            return differenceWEWDUber(d) ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-differenceWEWDUber(d)): "black";
-            // dist = differenceWEWDUber(d);
-            // return dist ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
-        });
+        .style("fill", (d) => divergentColorScale(differenceWEWDUber(d)));
 }
 
 function toggleMetro() {
@@ -441,6 +484,7 @@ function toggleMetro() {
         .text("60+/No data")
 
     back2black();
+    toggleLegendLinear();
     if (ctx.src) {
         drawMetro();
     }
@@ -460,13 +504,11 @@ function drawMetro() {
         headers: myHeaders,
     }).then(function(response) {return response.json();})
     .then(function(json) {
-        console.log(json);
         for (i=0; i<json.isochrones.length; i++){
             json.isochrones[i]['geometry'] = json.isochrones[i].geojson;
             json.isochrones[i]['type'] = "Feature";
             json.isochrones[i]['i'] = i;
         }
-        console.log(json);
 
         let color = ["rgb(0, 104, 55)","rgb(76, 176, 92)","rgb(182, 224, 118)","rgb(253, 190, 112)","rgb(233, 89, 58)","rgb(165, 0, 38)"];
 
@@ -489,6 +531,7 @@ function toggleWalk() {
     d3.select("#black-label")
         .text("60+/No data")
     back2black();
+    toggleLegendLinear();
 }
 
 /** data fetching and transforming */
