@@ -88,7 +88,7 @@ function distanceUber(d){
     }
 }
 
-function differenceWEWDUber(d){
+function differenceWEWDUber(d, relative){
     foundWE = false;
     foundWD = false;
     if (d.properties.MOVEMENT_ID == ctx.selected) return 0;
@@ -108,6 +108,9 @@ function differenceWEWDUber(d){
     }
     if (foundWE && foundWD)
     {
+        if (relative) {
+            return (wd - we) / we;
+        }
         return wd - we;
     }
     return 10000;
@@ -284,6 +287,9 @@ function newOrigin(thisNode, d) {
         case "TAXI-WEWD":
             drawTaxiWEWD();
             break;
+        case "TAXI-WEWD-Rel":
+            drawTaxiWEWDRelative();
+            break;
         case "WALK":
             drawWalk();
             break;
@@ -431,10 +437,20 @@ function back2black() {
 function divergentColorScale(duration) {
     if (duration < -300) return "rgb(0, 77, 92)";
     if (duration < 0) return "rgb(129, 155, 163)";
-    if (duration < 300) return "rgb(241, 241, 241)"
+    if (duration < 300) return "rgb(241, 241, 241)";
     if (duration < 600) return "rgb(242, 215, 172)";
     if (duration < 900) return "rgb(222, 167, 4)";
     if (duration < 3600) return "rgb(132, 87, 38)";
+    return "black";
+}
+
+function divergentColorScaleRelative(pct) {
+    if (pct < -0.05) return "#005c43";
+    if (pct < 0) return "#81a495";
+    if (pct < 0.05) return "#f1f1f1";
+    if (pct < 0.10) return "#d1b4e8";
+    if (pct < 0.15) return "#a15ce2";
+    if (pct < 3600) return "#57248a";
     return "black";
 }
 
@@ -455,6 +471,25 @@ function toggleLegendDivergent() {
     d3.select("#color_dur20_diff05").style("background", "rgb(242, 215, 172)");
     d3.select("#color_dur30_diff10").style("background", "rgb(222, 167, 4)");
     d3.select("#color_dur45_diff15").style("background", "rgb(132, 87, 38)");
+}
+
+function toggleLegendDivergentRelative() {
+    d3.select("#legend-title")
+        .text("Uber travel time excess during the week (%)");
+    
+    d3.select("#dur00_diff-10").text("-10");
+    d3.select("#dur05_diff-05").text("-5");
+    d3.select("#dur10_diff00").text("0");
+    d3.select("#dur20_diff05").text("+5");
+    d3.select("#dur30_diff10").text("+10");
+    d3.select("#dur45_diff15").text("+15");
+
+    d3.select("#color_dur00_diff-10").style("background", "#005c43");
+    d3.select("#color_dur05_diff-05").style("background", "#81a495");
+    d3.select("#color_dur10_diff00").style("background", "#f1f1f1");
+    d3.select("#color_dur20_diff05").style("background", "#d1b4e8");
+    d3.select("#color_dur30_diff10").style("background", "#a15ce2");
+    d3.select("#color_dur45_diff15").style("background", "#57248a");
 }
 
 function toggleLegendLinear() {
@@ -504,7 +539,7 @@ function drawTaxi() {
 function toggleTaxiWEWD() {
     ctx.MEDIUM = "TAXI-WEWD";
     d3.select("#medium-selection li text")
-        .text("Uber week-ends vs week-days")
+        .text("Uber week-ends vs week-days (abs)")
     d3.select("#black-label")
         .text("No data")
     
@@ -518,7 +553,27 @@ function toggleTaxiWEWD() {
 function drawTaxiWEWD() {
     console.log("Draw taxi WEWD");
     tree.zones.selectAll("path.zone")
-        .style("fill", (d) => divergentColorScale(differenceWEWDUber(d)));
+        .style("fill", (d) => divergentColorScale(differenceWEWDUber(d, false)));
+}
+
+function toggleTaxiWEWDRel() {
+    ctx.MEDIUM = "TAXI-WEWD-Rel";
+    d3.select("#medium-selection li text")
+        .text("Uber week-ends vs week-days (rel)")
+    d3.select("#black-label")
+        .text("No data")
+    
+    back2black();
+    toggleLegendDivergentRelative();
+    if (ctx.src) {
+        drawTaxiWEWDRelative();
+    }
+}
+
+function drawTaxiWEWDRelative() {
+    console.log("Draw taxi WEWD");
+    tree.zones.selectAll("path.zone")
+        .style("fill", (d) => divergentColorScaleRelative(differenceWEWDUber(d, true)));
 }
 
 function toggleMetro() {
