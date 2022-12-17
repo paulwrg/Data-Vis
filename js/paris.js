@@ -242,6 +242,9 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
       scale = parseFloat(scale.substring(0, scale.indexOf(')')));
       ctx.scale = 1 / scale;
       tree.selected.selectAll("path").style("stroke-width", 5*ctx.scale);
+      tree.overlay.select("#arrow").selectAll("line")
+        .style("stroke-width", 5*ctx.scale)
+        .style("stroke-dasharray", `${10*ctx.scale} , ${10*ctx.scale}`);
       if (ctx.scale != 1){
           d3.selectAll("image")
             .attr("transform", (d) => (getPlaneTransform(d)));
@@ -258,6 +261,8 @@ function drawMap(zonesData, waterData, greenData, roadData, svgEl){
 
 function newOrigin(thisNode, d) {
     tree.selected.selectAll("path").remove();
+    tree.overlay.select("#arrow").remove();
+
     tree.selected.node().appendChild(thisNode.node().cloneNode());
     ctx.selected = d.properties.MOVEMENT_ID;
     ctx.filteredWE = ctx.distancesWE.filter(d => d.sourceid == ctx.selected);
@@ -282,6 +287,8 @@ function newOrigin(thisNode, d) {
             drawTaxiWEWD();
             break;
         case "WALK":
+            drawWalk();
+            break;
         case "TAXI":
         default:
             drawTaxi();
@@ -302,6 +309,44 @@ function newTarget(thisNode, d) {
         results.public = min;
         printRes();
     });
+
+    drawArrow();
+}
+
+function drawArrow() {
+    let trgt = getBoundingBoxCenter(tree.selected.select("path:last-child"));
+    let xy1 = PROJECTIONS.ER([ctx.src[0], ctx.src[1]]);
+    let xy2 = PROJECTIONS.ER([trgt[0], trgt[1]]);
+    tree.overlay.select("#arrow").remove();
+    arrow = tree.overlay.append("g").attr("id", "arrow")
+    // arrow.append("marker")
+    //     .attr("id", "triangle")
+    //     .attr("viewBox", "0 0 10 10")
+    //     .attr("refX", 0)
+    //     .attr("refY", 5)
+    //     .style("stroke", "red")
+    //     .style("fill", "red")
+    //     .attr("markerUnits", "strokeWidth")
+    //     .attr("markerWidth", 4)
+    //     .attr("markerHeight", 3)
+    //     .attr("orient", "auto")
+    //     .append("path")
+    //     .attr("d", "M 0 0 L 10 5 L 0 10 z")
+    arrow.append("line")
+        .attr("x1", xy1[0] )
+        .attr("y1", xy1[1] )
+        .attr("x2", xy2[0] )
+        .attr("y2", xy2[1] )
+        .style("stroke", "white")
+        .style("stroke-width", 5*ctx.scale)
+        .style("stroke-dasharray", `${10*ctx.scale} , ${10*ctx.scale}`);
+        // .attr("marker-end", "url(#triangle)");
+
+    //     <marker id="triangle" viewBox="0 0 10 10" refX="0" refY="5" markerUnits="strokeWidth" markerWidth="4" markerHeight="3" orient="auto">
+    //   <path d="M 0 0 L 10 5 L 0 10 z"/>
+    // </marker>
+	// <line x1="100" y1="50.5" x2="300" y2="50.5" marker-end="url(#triangle)" stroke="black" stroke-width="10"/>
+
 }
 
 function printRes() {
@@ -489,6 +534,16 @@ function toggleWalk() {
     d3.select("#black-label")
         .text("60+/No data")
     back2black();
+    drawWalk();
+}
+
+function drawWalk() {
+    console.log("Draw Walk");
+    tree.zones.selectAll("path.zone")
+        .style("fill", function(d) {
+            dist = (3600/4) * haversineDistance(getBoundingBoxCenter(d3.select(this)), ctx.src);
+            return dist<3600 ? d3.scaleSequentialQuantile(d3.interpolateRdYlGn).domain([-3600, -2700, -1800, -1200, -1200, -600, -300])(-dist): "black";
+        });
 }
 
 /** data fetching and transforming */
